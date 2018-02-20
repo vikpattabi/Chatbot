@@ -13,7 +13,6 @@ from movielens import ratings
 from random import randint
 import re
 from PorterStemmer import PorterStemmer
-import deps.NaiveBayes as nb
 
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
@@ -25,23 +24,22 @@ class Chatbot:
       self.name = 'moviebot'
       self.is_turbo = is_turbo
       self.read_data()
-      self.likes_vec = np.zeros(len(self.titles))
+      #User data
+      self.response_indexes = {}
       #Read in responses
-      self.responses = self.readInFile('deps/responses.txt')
+      self.responses = self.readInFile('deps/responses.txt', False)
       self.articles = ['The', 'A', 'An']
+      self.negations = self.readInFile('deps/negations.txt', True)
+      self.punctuation = '.,?!-;'
       #Binarize ratings matrix
       self.binarize()
       #Initialize relevant vars
-      self.datapoints = 0
       self.gaveRecommendation = False
       self.INFO_THRESHOLD = 5
       #Pre-process titles, ratings to make later work more efficient.
       self.titles_map = self.processTitles(self.titles)
-      self.transposed_ratings = self.ratings.transpose()
       #Initialize relevant classes
       self.stemmer = PorterStemmer()
-      #self.classifier = nb.NaiveBayes()
-      #TODO: Train classifier
 
     #############################################################################
     # 1. WARM UP REPL
@@ -128,21 +126,21 @@ class Chatbot:
         if movie in self.titles_map.keys() or alternate in self.titles_map.keys():
             key = movie if movie in self.titles_map.keys() else alternate
             index = self.titles_map[key][1]
-            if self.likes_vec[index] != 0:
+
+            if self.response_indexes.has_key(index):
                 result += self.alreadyHeardAboutMovie()
-                return
+                return result
             if self.classifySentiment(inputStr):
-                self.likes_vec[index] = 1
+                self.response_indexes[index] = 1
                 result += 'You liked ' + movie + '.'
             else:
-                self.likes_vec[index] = -1
+                self.response_indexes[index] = -1
                 result += 'You did not like ' + movie + '.'
-            self.datapoints += 1
         else:
             result += self.respondToUnseenMovie()
 
-        if self.datapoints > self.INFO_THRESHOLD:
-            recommended = self.recommend(self.likes_vec)
+        if len(self.response_indexes) > self.INFO_THRESHOLD:
+            recommended = self.recommend(self.likes_vec, self.response_indexes)
             top_choice = recommended[0]
             self.gaveRecommendation = True
             result += generateRecommendationString(top_choice)
@@ -158,14 +156,29 @@ class Chatbot:
 
     def classifySentiment(self, inputStr):
         #Right now, very rudimentary - use NB?
+
         score = 0
         split = inputStr.split(' ')
-        for word in split:
+        negating = False
+        for i in range(len(split)):
+            word = split[i]
             word = self.stemmer.stem(word)
-            if word in self.sentiment:
+            if negating: word = 'NOT_' + word
+            split[i] = word
+            if self.punctuation in word: negating = False
+            if word in self.negations:
+                negating = True
+
+        for word in split:
+            if 'NOT_' in word:
+                if word[4:] in self.sentiment:
+                    score += (-1 if self.sentiment[word[4:]] == 'pos' else 1)
+            elif word in self.sentiment:
                 score += (1 if self.sentiment[word] == 'pos' else -1)
+        #QUESTION:
         #Handle cases where sentiment is 0, user is neutral?
         #Difference between neutral user and not rating?
+        #TELL ME MORE IF SCORE IS 0
         return (score > 0)
 
     #############################################################################
@@ -175,10 +188,14 @@ class Chatbot:
         #TODO: Make this more robust, randomly generate possibilities, etc.
         return 'You might like ' + choice
 
-    def readInFile(self, filename):
+    def readInFile(self, filename, simple):
         content = []
         with open(filename) as f:
             content = f.readlines()
+        if simple:
+            for i in range(len(content)):
+                content[i] = content[i].rstrip()
+            return content
 
         res = {}
         curr_key = ''
@@ -230,22 +247,28 @@ class Chatbot:
       return float(np.dot(u, v))/(np.norm(u)*np.norm(v))
 
 
-    def recommend(self, u):
+    def recommend(self, u, indexes):
       """Generates a list of movies based on the input vector u using
       collaborative filtering"""
       # TODO: Implement a recommendation function that takes a user vector u
       # and outputs a list of movies recommended by the chatbot
-      currMaxDistance = float('inf')
-      currBestMatch = []
-      for row in self.transposed_ratings:
-          dist = self.distance(u, row)
-          if dist < currMaxDistance:
-              currMaxDistance = dist
-              currBestMatch = row
-      for i in range(len(currBestMatch)):
-          if currBestMatch[i] == 1 and u[i] == 0:
-              return self.titles[i][0]
-      return "Sorry, no match."
+      user_max = float('-inf')
+      movie_to_recommend = ''
+      for i in range(len(self.ratings)):
+          if i in self.response_indexes.keys(): continue
+
+          v = self.ratings[i]
+          score = 0.0
+          for j in self.response_indexes.keys():
+              u = self.ratings[j]
+              dist = self.distance(u, v)
+              user_score = float(self.response_indexes[j])
+              score += user_score*dist
+          if score > user_max:
+              user_max = score
+              movie_to_recommend = self.titles[i][0]
+
+      return movie_to_recommend
 
 
     #############################################################################
