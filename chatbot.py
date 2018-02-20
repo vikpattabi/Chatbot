@@ -23,6 +23,9 @@ class Chatbot:
     def __init__(self, is_turbo=False):
       self.name = 'moviebot'
       self.is_turbo = is_turbo
+      #Initialize relevant classes
+      self.stemmer = PorterStemmer()
+      self.sentiment = {}
       self.read_data()
       #User data
       self.response_indexes = {}
@@ -38,8 +41,6 @@ class Chatbot:
       self.INFO_THRESHOLD = 5
       #Pre-process titles, ratings to make later work more efficient.
       self.titles_map = self.processTitles(self.titles)
-      #Initialize relevant classes
-      self.stemmer = PorterStemmer()
 
     #############################################################################
     # 1. WARM UP REPL
@@ -110,19 +111,7 @@ class Chatbot:
 
         #Now we know there is a properly formatted, single movie in the input, although it may not be one
         #we have in our list.
-        pattern = '\"(.*?)\"'
-        matched_pattern = re.findall(pattern, inputStr)
-        movie = matched_pattern[0]
-        splitName = movie.split(' ')
-        alternate = ''
-        if splitName[0] in self.articles:
-            article = splitName[0]
-            splitName.pop(0)
-            year = splitName[len(splitName) - 1]
-            splitName.pop()
-            alternate = ' '.join(splitName)
-            alternate += ', ' + article + ' ' + year
-            alternate = alternate.rstrip()
+        movie, alternate = self.extractMovieNames(inputStr)
 
         result = ''
         if self.titles_map.has_key(movie) or self.titles_map.has_key(alternate):
@@ -132,12 +121,17 @@ class Chatbot:
             if self.response_indexes.has_key(index):
                 result += self.alreadyHeardAboutMovie()
                 return result
-            if self.classifySentiment(inputStr):
+            score = self.classifySentiment(inputStr)
+            if score > 0:
                 self.response_indexes[index] = 1
                 result += 'You liked ' + movie + '. '
-            else:
+            elif score < 0:
                 self.response_indexes[index] = -1
                 result += 'You did not like ' + movie + '. '
+            else:
+                result += self.respondToNoSentiment(movie)
+                return result
+
         else:
             result += self.respondToUnseenMovie()
 
@@ -148,6 +142,9 @@ class Chatbot:
 
         return result
 
+    def respondToNoSentiment(self, title):
+        return "Sorry, I'm not quite sure how you feel about " + title + '.'
+
     def respondToUnseenMovie(self):
         return "I'm not familar with this movie."
 
@@ -157,7 +154,7 @@ class Chatbot:
 
     def classifySentiment(self, inputStr):
         #Right now, very rudimentary - use NB?
-
+        #Seems a bit janky??
         score = 0
         split = inputStr.split(' ')
         negating = False
@@ -185,6 +182,22 @@ class Chatbot:
     #############################################################################
     # 3. Movie Recommendation helper functions                                  #
     #############################################################################
+    def extractMovieNames(self, inputStr):
+        pattern = '\"(.*?)\"'
+        matched_pattern = re.findall(pattern, inputStr)
+        movie = matched_pattern[0]
+        splitName = movie.split(' ')
+        alternate = ''
+        if splitName[0] in self.articles:
+            article = splitName[0]
+            splitName.pop(0)
+            year = splitName[len(splitName) - 1]
+            splitName.pop()
+            alternate = ' '.join(splitName)
+            alternate += ', ' + article + ' ' + year
+            alternate = alternate.rstrip()
+        return movie, alternate
+
     def generateRecommendationString(self, choice):
         #TODO: Make this more robust, randomly generate possibilities, etc.
         return '\nI think I have enough information. You might like ' + choice
@@ -212,13 +225,17 @@ class Chatbot:
         return res
 
     def read_data(self):
+        #PRE-PROCESS w/ Porter Stemmer
       """Reads the ratings matrix from file"""
       # This matrix has the following shape: num_movies x num_users
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, self.ratings = ratings()
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
-      self.sentiment = dict(reader)
+      temp = dict(reader)
+      for key in temp.keys():
+        new_key = self.stemmer.stem(key)
+        self.sentiment[new_key] = temp[key]
 
     def processTitles(self, titles_list):
         res = {}
