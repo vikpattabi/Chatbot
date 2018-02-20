@@ -12,6 +12,7 @@ import numpy as np
 from movielens import ratings
 from random import randint
 import re
+from PorterStemmer import PorterStemmer
 
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
@@ -23,11 +24,15 @@ class Chatbot:
       self.name = 'moviebot'
       self.is_turbo = is_turbo
       self.read_data()
-      self.current_likes = []
-      self.current_dislikes = []
+      self.likes_vec = np.zeros(len(self.titles))
       self.errors = self.readInFile('data/errors.txt')
       self.articles = ['The', 'A', 'An']
       self.binarize()
+      self.datapoints = 0
+      self.gaveRecommendation = False
+      self.INFO_THRESHOLD = 5
+      self.stemmer = PorterStemmer()
+      self.titles_map = self.processTitles(self.titles)
 
     #############################################################################
     # 1. WARM UP REPL
@@ -57,7 +62,7 @@ class Chatbot:
       # TODO: Write a short farewell message                                      #
       #############################################################################
 
-      goodbye_message = 'Have a nice day!'
+      goodbye_message = 'Thanks for chatting with me!' if not self.gaveRecommendation else 'Hope I was helpful! Have fun!'
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -89,19 +94,60 @@ class Chatbot:
 
     def processSimple(self, inputStr):
         count = inputStr.count('\"')
+        if count == 0:
+            no_movie = self.errors['NO_MOVIES']
+            return no_movie[randint(0, len(no_movie) - 1)]
         if count != 2:
             no_quotes_list = self.errors['WRONG_QUOTES']
             return no_quotes_list[randint(0, len(no_quotes_list) - 1)]
 
         pattern = '\"(.*?)\"'
-        movie = re.findall(pattern, inputStr)
+        matched_pattern = re.findall(pattern, inputStr)
+        movie = matched_pattern[0]
+        splitName = movie.split(' ')
+        alternate = ''
+        if splitName[0] in self.articles:
+            splitName.pop(0)
+            alternate = ' '.join(splitName)
 
-        return 'processed'
+        if movie in self.titles_map.keys() or alternate in self.titles_map.keys():
+            key = movie if movie in self.titles_map.keys() else alternate
+            index = self.titles_map[key][1]
+            print index
+            if self.classifySentiment(inputStr):
+                self.likes_vec[index] = 1
+                print 'classified good'
+            else:
+                self.likes_vec[index] = -1
+                print 'classified bad'
+            self.datapoints += 1
 
+        if self.datapoints > self.INFO_THRESHOLD:
+            recommended = self.recommend(self.likes_vec)
+            top_choice = recommended[0]
+            self.gaveRecommendation = True
+            result += generateRecommendationString(top_choice)
+
+        result += 'processed'
+        return result
+
+    def classifySentiment(self, inputStr):
+        #TODO: Make this more robust. Right now, it's very rudimentary.
+        #Just adds, subtracts sentiment words.
+        split = inputStr.split(' ')
+        score = 0
+        for i in range(len(split)):
+            split[i] = self.stemmer.stem(split[i])
+
+        return True
 
     #############################################################################
     # 3. Movie Recommendation helper functions                                  #
     #############################################################################
+    def generateRecommendationString(self, choice):
+        #TODO: Make this more robust, randomly generate possibilities, etc.
+        return 'You might like ' + choice
+
     def readInFile(self, filename):
         content = []
         with open(filename) as f:
@@ -129,9 +175,17 @@ class Chatbot:
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
 
+    def processTitles(self, titles_list):
+        res = {}
+        for i in range(len(titles_list)):
+             title = titles_list[i][0]
+             res[title] = [titles_list[i][1], i]
+        return res
 
     def binarize(self):
       """Modifies the ratings matrix to make all of the ratings binary"""
+      # QUESTION: Should we consider normalizing by subtracting the user's avg rating before?
+      # Seems like too much unnecessary work?
       res = np.nonzero(self.ratings)
       for val in range(0, len(res[0])):
         row = res[0][val]
@@ -145,6 +199,7 @@ class Chatbot:
       """Calculates a given distance function between vectors u and v"""
       # TODO: Implement the distance function between vectors u and v]
       # Note: you can also think of this as computing a similarity measure
+      # Right now, implements cosine similarity.
       return float(np.dot(u, v))/(np.norm(u)*np.norm(v))
 
 
@@ -154,7 +209,7 @@ class Chatbot:
       # TODO: Implement a recommendation function that takes a user vector u
       # and outputs a list of movies recommended by the chatbot
 
-      pass
+
 
 
     #############################################################################
