@@ -118,12 +118,14 @@ class Chatbot:
         if splitName[0] in self.articles:
             article = splitName[0]
             splitName.pop(0)
+            year = splitName[len(splitName) - 1]
+            splitName.pop()
             alternate = ' '.join(splitName)
-            alternate += ', ' + article
-
+            alternate += ', ' + article + ' ' + year
+            alternate = alternate.rstrip()
 
         result = ''
-        if movie in self.titles_map.keys() or alternate in self.titles_map.keys():
+        if self.titles_map.has_key(movie) or self.titles_map.has_key(alternate):
             key = movie if movie in self.titles_map.keys() else alternate
             index = self.titles_map[key][1]
 
@@ -132,18 +134,17 @@ class Chatbot:
                 return result
             if self.classifySentiment(inputStr):
                 self.response_indexes[index] = 1
-                result += 'You liked ' + movie + '.'
+                result += 'You liked ' + movie + '. '
             else:
                 self.response_indexes[index] = -1
-                result += 'You did not like ' + movie + '.'
+                result += 'You did not like ' + movie + '. '
         else:
             result += self.respondToUnseenMovie()
 
-        if len(self.response_indexes) > self.INFO_THRESHOLD:
-            recommended = self.recommend(self.likes_vec, self.response_indexes)
-            top_choice = recommended[0]
+        if len(self.response_indexes.keys()) >= self.INFO_THRESHOLD:
+            recommended = self.recommend(self.response_indexes)
             self.gaveRecommendation = True
-            result += generateRecommendationString(top_choice)
+            result += self.generateRecommendationString(recommended)
 
         return result
 
@@ -186,7 +187,7 @@ class Chatbot:
     #############################################################################
     def generateRecommendationString(self, choice):
         #TODO: Make this more robust, randomly generate possibilities, etc.
-        return 'You might like ' + choice
+        return '\nI think I have enough information. You might like ' + choice
 
     def readInFile(self, filename, simple):
         content = []
@@ -222,7 +223,7 @@ class Chatbot:
     def processTitles(self, titles_list):
         res = {}
         for i in range(len(titles_list)):
-             title = titles_list[i][0]
+             title = titles_list[i][0].rstrip()
              res[title] = [titles_list[i][1], i]
         return res
 
@@ -243,11 +244,14 @@ class Chatbot:
       """Calculates a given distance function between vectors u and v"""
       # TODO: Implement the distance function between vectors u and v]
       # Note: you can also think of this as computing a similarity measure
-      # Right now, implements cosine similarity.
-      return float(np.dot(u, v))/(np.norm(u)*np.norm(v))
+      # Right now, implements cosine similarity
+      u_norm = np.linalg.norm(u)
+      v_norm = np.linalg.norm(v)
+      if u_norm == 0 or v_norm == 0: return 0.0
+      return float(np.dot(u, v))/(np.linalg.norm(u)*np.linalg.norm(v))
 
 
-    def recommend(self, u, indexes):
+    def recommend(self, indexes):
       """Generates a list of movies based on the input vector u using
       collaborative filtering"""
       # TODO: Implement a recommendation function that takes a user vector u
@@ -263,7 +267,7 @@ class Chatbot:
               u = self.ratings[j]
               dist = self.distance(u, v)
               user_score = float(self.response_indexes[j])
-              score += user_score*dist
+              score += user_score * dist
           if score > user_max:
               user_max = score
               movie_to_recommend = self.titles[i][0]
