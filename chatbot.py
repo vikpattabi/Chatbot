@@ -13,6 +13,7 @@ from movielens import ratings
 from random import randint
 import re
 from PorterStemmer import PorterStemmer
+import deps.NaiveBayes as nb
 
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
@@ -25,14 +26,22 @@ class Chatbot:
       self.is_turbo = is_turbo
       self.read_data()
       self.likes_vec = np.zeros(len(self.titles))
-      self.errors = self.readInFile('data/errors.txt')
+      #Read in responses
+      self.responses = self.readInFile('deps/responses.txt')
       self.articles = ['The', 'A', 'An']
+      #Binarize ratings matrix
       self.binarize()
+      #Initialize relevant vars
       self.datapoints = 0
       self.gaveRecommendation = False
       self.INFO_THRESHOLD = 5
-      self.stemmer = PorterStemmer()
+      #Pre-process titles, ratings to make later work more efficient.
       self.titles_map = self.processTitles(self.titles)
+      self.transposed_ratings = self.ratings.transpose()
+      #Initialize relevant classes
+      self.stemmer = PorterStemmer()
+      #self.classifier = nb.NaiveBayes()
+      #TODO: Train classifier
 
     #############################################################################
     # 1. WARM UP REPL
@@ -95,32 +104,42 @@ class Chatbot:
     def processSimple(self, inputStr):
         count = inputStr.count('\"')
         if count == 0:
-            no_movie = self.errors['NO_MOVIES']
+            no_movie = self.responses['NO_MOVIES']
             return no_movie[randint(0, len(no_movie) - 1)]
         if count != 2:
-            no_quotes_list = self.errors['WRONG_QUOTES']
+            no_quotes_list = self.responses['WRONG_QUOTES']
             return no_quotes_list[randint(0, len(no_quotes_list) - 1)]
 
+        #Now we know there is a properly formatted, single movie in the input, although it may not be one
+        #we have in our list.
         pattern = '\"(.*?)\"'
         matched_pattern = re.findall(pattern, inputStr)
         movie = matched_pattern[0]
         splitName = movie.split(' ')
         alternate = ''
         if splitName[0] in self.articles:
+            article = splitName[0]
             splitName.pop(0)
             alternate = ' '.join(splitName)
+            alternate += ', ' + article
 
+
+        result = ''
         if movie in self.titles_map.keys() or alternate in self.titles_map.keys():
             key = movie if movie in self.titles_map.keys() else alternate
             index = self.titles_map[key][1]
-            print index
+            if self.likes_vec[index] != 0:
+                result += self.alreadyHeardAboutMovie()
+                return
             if self.classifySentiment(inputStr):
                 self.likes_vec[index] = 1
-                print 'classified good'
+                result += 'You liked ' + movie + '.'
             else:
                 self.likes_vec[index] = -1
-                print 'classified bad'
+                result += 'You did not like ' + movie + '.'
             self.datapoints += 1
+        else:
+            result += self.respondToUnseenMovie()
 
         if self.datapoints > self.INFO_THRESHOLD:
             recommended = self.recommend(self.likes_vec)
@@ -128,18 +147,26 @@ class Chatbot:
             self.gaveRecommendation = True
             result += generateRecommendationString(top_choice)
 
-        result += 'processed'
         return result
 
-    def classifySentiment(self, inputStr):
-        #TODO: Make this more robust. Right now, it's very rudimentary.
-        #Just adds, subtracts sentiment words.
-        split = inputStr.split(' ')
-        score = 0
-        for i in range(len(split)):
-            split[i] = self.stemmer.stem(split[i])
+    def respondToUnseenMovie(self):
+        return "I'm not familar with this movie."
 
-        return True
+    def alreadyHeardAboutMovie(self):
+        #TODO: Make this more robust, randomly generate responses.
+        return "You already told me about that movie."
+
+    def classifySentiment(self, inputStr):
+        #Right now, very rudimentary - use NB?
+        score = 0
+        split = inputStr.split(' ')
+        for word in split:
+            word = self.stemmer.stem(word)
+            if word in self.sentiment:
+                score += (1 if self.sentiment[word] == 'pos' else -1)
+        #Handle cases where sentiment is 0, user is neutral?
+        #Difference between neutral user and not rating?
+        return (score > 0)
 
     #############################################################################
     # 3. Movie Recommendation helper functions                                  #
@@ -208,8 +235,17 @@ class Chatbot:
       collaborative filtering"""
       # TODO: Implement a recommendation function that takes a user vector u
       # and outputs a list of movies recommended by the chatbot
-
-
+      currMaxDistance = float('inf')
+      currBestMatch = []
+      for row in self.transposed_ratings:
+          dist = self.distance(u, row)
+          if dist < currMaxDistance:
+              currMaxDistance = dist
+              currBestMatch = row
+      for i in range(len(currBestMatch)):
+          if currBestMatch[i] == 1 and u[i] == 0:
+              return self.titles[i][0]
+      return "Sorry, no match."
 
 
     #############################################################################
