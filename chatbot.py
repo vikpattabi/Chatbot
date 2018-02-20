@@ -9,9 +9,9 @@ import csv
 import math
 
 import numpy as np
-
 from movielens import ratings
 from random import randint
+import re
 
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
@@ -25,6 +25,9 @@ class Chatbot:
       self.read_data()
       self.current_likes = []
       self.current_dislikes = []
+      self.errors = self.readInFile('data/errors.txt')
+      self.articles = ['The', 'A', 'An']
+      self.binarize()
 
     #############################################################################
     # 1. WARM UP REPL
@@ -36,7 +39,11 @@ class Chatbot:
       # TODO: Write a short greeting message                                      #
       #############################################################################
 
-      greeting_message = 'How can I help you?'
+      greeting_message = (
+                        "Hi! Let\'s chat about movies! I\'ll help you pick a \n"
+                        "movie based on your likes and dislikes. Let's get started! \n"
+                        "Please tell me about a movie you've seen recently."
+                        )
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -63,7 +70,7 @@ class Chatbot:
     # 2. Modules 2 and 3: extraction and transformation                         #
     #############################################################################
 
-    def process(self, input):
+    def process(self, inputStr):
       """Takes the input string from the REPL and call delegated functions
       that
         1) extract the relevant information and
@@ -75,16 +82,43 @@ class Chatbot:
       # highly recommended                                                        #
       #############################################################################
       if self.is_turbo == True:
-        response = 'processed %s in creative mode!!' % input
+        response = 'processed %s in creative mode!!' % inputStr
+        return response
       else:
-        response = 'processed %s in starter mode' % input
+          return self.processSimple(inputStr)
 
-      return response
+    def processSimple(self, inputStr):
+        count = inputStr.count('\"')
+        if count != 2:
+            no_quotes_list = self.errors['WRONG_QUOTES']
+            return no_quotes_list[randint(0, len(no_quotes_list) - 1)]
+
+        pattern = '\"(.*?)\"'
+        movie = re.findall(pattern, inputStr)
+
+        return 'processed'
 
 
     #############################################################################
     # 3. Movie Recommendation helper functions                                  #
     #############################################################################
+    def readInFile(self, filename):
+        content = []
+        with open(filename) as f:
+            content = f.readlines()
+
+        res = {}
+        curr_key = ''
+        for sent in content:
+            if '***' in sent:
+                new = sent.replace('*', '')
+                new = new.rstrip()
+                res[new] = []
+                curr_key = new
+            else:
+                res[curr_key].append(sent.rstrip())
+
+        return res
 
     def read_data(self):
       """Reads the ratings matrix from file"""
@@ -98,16 +132,20 @@ class Chatbot:
 
     def binarize(self):
       """Modifies the ratings matrix to make all of the ratings binary"""
-
-      pass
-
+      res = np.nonzero(self.ratings)
+      for val in range(0, len(res[0])):
+        row = res[0][val]
+        col = res[1][val]
+        score = self.ratings[row][col]
+        if val == 0: continue
+        if val < 3.0: self.ratings[row][col] = -1
+        else: self.ratings[row][col] = 1
 
     def distance(self, u, v):
       """Calculates a given distance function between vectors u and v"""
       # TODO: Implement the distance function between vectors u and v]
       # Note: you can also think of this as computing a similarity measure
-
-      pass
+      return float(np.dot(u, v))/(np.norm(u)*np.norm(v))
 
 
     def recommend(self, u):
