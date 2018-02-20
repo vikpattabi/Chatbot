@@ -23,6 +23,8 @@ class Chatbot:
       self.name = 'moviebot'
       self.is_turbo = is_turbo
       self.read_data()
+      self.current_likes = []
+      self.current_dislikes = []
 
     #############################################################################
     # 1. WARM UP REPL
