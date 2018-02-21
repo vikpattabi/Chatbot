@@ -332,9 +332,8 @@ class Chatbot:
         row = res[0][val]
         col = res[1][val]
         score = self.ratings[row][col]
-        if val == 0: continue
-        if val < 3.0: self.ratings[row][col] = -1
-        else: self.ratings[row][col] = 1
+        if val < 2.5: self.ratings[row][col] = -1
+        elif val > 2.5: self.ratings[row][col] = 1
 
     def distance(self, u, v):
       """Calculates a given distance function between vectors u and v"""
