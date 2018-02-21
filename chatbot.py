@@ -73,8 +73,9 @@ class Chatbot:
       #############################################################################
       # TODO: Write a short farewell message                                      #
       #############################################################################
-
-      goodbye_message = 'Thanks for chatting with me!' if len(self.recommendations)==0 else 'Hope I was helpful! Have fun!'
+      key = 'GOODBYE_GAVE_REC' if len(self.recommendations) > 0 else 'GOODBYE_NO_REC'
+      options = self.responses[key]
+      goodbye_message = options[randint(0, len(options) - 1)]
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -225,14 +226,12 @@ class Chatbot:
             word = word.translate(None, string.punctuation)
             if 'NOT' in word:
                 sliced = word[3:]
-                if self.sentiment.has_key(sliced):
+                if self.sentiment.has_key(self.stemmer.stem(sliced)) or self.sentiment.has_key(sliced):
                     score += (-1 if self.sentiment[word[3:]] == 'pos' else 1)
-            elif self.sentiment.has_key(word):
+            elif self.sentiment.has_key(self.stemmer.stem(word)) or self.sentiment.has_key(word):
                 score += (1 if self.sentiment[word] == 'pos' else -1)
 
         #QUESTION:
-        #Handle cases where sentiment is 0, user is neutral?
-        #Difference between neutral user and not rating?
         #TELL ME MORE IF SCORE IS 0
         #NEEDS IMPROVEMENT?
         return score

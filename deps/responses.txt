@@ -8,26 +8,25 @@ That sentence didn't make much sense - sorry :(
 I'm not sure I understand - make sure you're only telling me about one movie at a time.
 Sorry, I don't follow - one movie at a time please.
 I didn't quite catch that. Make sure your thought is well formed.
-***WRONG_MOVIES***
-I think you might have mistyped that movie name.
-I can't find that movie. Did you mean to type something else?
-Whoops. That movie doesn't exist. Can you tell me about a different one?
-I didn't quite catch that. Make sure your thought is well formed.
+I'm not sure if I saw a movie there.
 ***NO_SENTIMENT***
 I'm a little confused at what you're trying to express about REPL.
 I'm not sure how you feel about REPL.
 I didn't quite catch your thoughts on REPL.
 I don't think I understand whether or not you liked REPL.
 Sorry, I'm pretty tired. I missed whether or not you liked REPL.
+I can't tell if you liked REPL or not.
 ***UNSEEN_MOVIE***
 I admit, I haven't seen that one.
 I must have missed that one in theaters.
 To be honest, I haven't seen that yet.
 I don't remember that movie.
+I haven't heard about that movie before.
 ***ALREADY_SAW_MOVIE***
 You already told me about that one.
 I remember you mentioning that to me.
 I think we already talked about that one.
+Yup, I remember you mentioning that movie.
 ***CURIOSITY***
 Cool, tell me about more movies.
 Ok, what else have you seen?
@@ -48,3 +47,13 @@ I've got an idea.
 I think I have enough information.
 Hmmm.
 My mighty AI has had an insight!
+This one is one of my personal favorites.
+***GOODBYE_GAVE_REC***
+Hope I was helpful!
+Have fun with that recommendation!
+Hope you enjoy the movie! Bye!
+***GOODBYE_NO_REC***
+Bye! Talk to you soon.
+Have a good one!
+Aw, that's it. Ok, bye!
+Cool, talk to you later.
