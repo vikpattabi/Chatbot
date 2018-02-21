@@ -13,6 +13,7 @@ from movielens import ratings
 from random import randint
 import re
 from PorterStemmer import PorterStemmer
+import string
 
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
@@ -29,15 +30,18 @@ class Chatbot:
       self.read_data()
       #User data
       self.response_indexes = {}
-      #Read in responses
+      #Read in data
       self.responses = self.readInFile('deps/responses.txt', False)
       self.articles = ['The', 'A', 'An']
       self.negations = self.readInFile('deps/negations.txt', True)
       self.punctuation = '.,?!-;'
+      self.no_words = self.readInFile('deps/no_words.txt', True)
+      self.yes_words = self.readInFile('deps/yes_words.txt', True)
       #Binarize ratings matrix
       self.binarize()
+      self.justGaveRec = False
       #Initialize relevant vars
-      self.gaveRecommendation = False
+      self.recommendations = []
       self.INFO_THRESHOLD = 5
       #Pre-process titles, ratings to make later work more efficient.
       self.titles_map = self.processTitles(self.titles)
@@ -70,7 +74,7 @@ class Chatbot:
       # TODO: Write a short farewell message                                      #
       #############################################################################
 
-      goodbye_message = 'Thanks for chatting with me!' if not self.gaveRecommendation else 'Hope I was helpful! Have fun!'
+      goodbye_message = 'Thanks for chatting with me!' if len(self.recommendations)==0 else 'Hope I was helpful! Have fun!'
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -101,6 +105,20 @@ class Chatbot:
           return self.processSimple(inputStr)
 
     def processSimple(self, inputStr):
+        #If we just gave a rec, maybe the user wants to hear more
+        #instead of just inputting new movies immediately
+        print inputStr
+        if self.justGaveRec:
+            affirmation = self.classifyAffirmation(inputStr)
+            if affirmation > 0:
+                return self.outputRecommendation('')
+            elif affirmation == 0:
+                return self.outputConfusion() + ' ' + self.outputRecQuestion()
+            else:
+                self.justGaveRec = False
+                return self.outputCuriosity()
+
+        #Assuming we haven't just given a rec, and we're reading in movies.
         count = inputStr.count('\"')
         if count == 0:
             no_movie = self.responses['NO_MOVIES']
@@ -113,44 +131,80 @@ class Chatbot:
         #we have in our list.
         movie, alternate = self.extractMovieNames(inputStr)
 
+        #Declare res string
         result = ''
+
+        #Check if we've already seen the movie so we can reprompt
+        index = -1
         if self.titles_map.has_key(movie) or self.titles_map.has_key(alternate):
             key = movie if movie in self.titles_map.keys() else alternate
             index = self.titles_map[key][1]
-
             if self.response_indexes.has_key(index):
-                result += self.alreadyHeardAboutMovie()
-                return result
-            score = self.classifySentiment(inputStr)
-            if score > 0:
-                self.response_indexes[index] = 1
-                result += 'You liked ' + movie + '. '
-            elif score < 0:
-                self.response_indexes[index] = -1
-                result += 'You did not like ' + movie + '. '
-            else:
-                result += self.respondToNoSentiment(movie)
-                return result
+                return self.alreadyHeardAboutMovie()
+        #Filter input string to remove bias from movie names (if any)
+        inputStr = re.sub('".*?"', 'MOVIE', inputStr)
+        score = self.classifySentiment(inputStr)
+        if score > 0:
+            result += 'You liked ' + movie + '. '
+            if index != -1: self.response_indexes[index] = 1
+        elif score < 0:
+            result += 'You did not like ' + movie + '. '
+            if index != -1: self.response_indexes[index] = -1
+        else: result += self.respondToNoSentiment(movie) + ' '
 
-        else:
-            result += self.respondToUnseenMovie()
+        #Different output if the movie isn't in our repository of movies.
+        if index == -1:
+            result += self.respondToUnseenMovie() + ' '
 
+        #If we have enough info now to recommend something.
         if len(self.response_indexes.keys()) >= self.INFO_THRESHOLD:
-            recommended = self.recommend(self.response_indexes)
-            self.gaveRecommendation = True
-            result += self.generateRecommendationString(recommended)
+            return self.outputRecommendation(result)
+        else: #Else, ask for more info.
+            result += self.outputCuriosity()
 
         return result
 
+    def outputConfusion(self):
+        options = self.responses['CONFUSION']
+        selected = options[randint(0, len(options) - 1)]
+        return selected
+
+    def outputCuriosity(self):
+        options = self.responses['CURIOSITY']
+        selected = options[randint(0, len(options) - 1)]
+        return selected
+
+    def outputRecommendation(self, currString):
+        recommended = self.recommend(self.response_indexes)
+        self.recommendations.append(recommended)
+        currString += ' ' + self.generateRecommendationString(recommended)
+        self.justGaveRec = True
+        return currString
+
+    def classifyAffirmation(self, inputStr):
+        inputStr = inputStr.translate(None, string.punctuation)
+        inputStr = (inputStr.lower()).split(' ')
+        count = 0.0
+        for word in inputStr:
+            if word in self.yes_words:
+                count += 1
+            elif word in self.no_words: count -= 1
+        return count
+
     def respondToNoSentiment(self, title):
-        return "Sorry, I'm not quite sure how you feel about " + title + '.'
+        options = self.responses['NO_SENTIMENT']
+        selected = options[randint(0, len(options) - 1)]
+        return selected.replace('REPL', '"' + title + '"')
 
     def respondToUnseenMovie(self):
-        return "I'm not familar with this movie."
+        options = self.responses['UNSEEN_MOVIE']
+        selected = options[randint(0, len(options) - 1)]
+        return selected
 
     def alreadyHeardAboutMovie(self):
-        #TODO: Make this more robust, randomly generate responses.
-        return "You already told me about that movie."
+        options = self.responses['ALREADY_SAW_MOVIE']
+        selected = options[randint(0, len(options) - 1)]
+        return selected
 
     def classifySentiment(self, inputStr):
         #Right now, very rudimentary - use NB?
@@ -161,23 +215,27 @@ class Chatbot:
         for i in range(len(split)):
             word = split[i]
             word = self.stemmer.stem(word)
-            if negating: word = 'NOT_' + word
+            if negating: word = 'NOT' + word
             split[i] = word
             if self.punctuation in word: negating = False
             if word in self.negations:
                 negating = True
 
         for word in split:
-            if 'NOT_' in word:
-                if word[4:] in self.sentiment:
-                    score += (-1 if self.sentiment[word[4:]] == 'pos' else 1)
-            elif word in self.sentiment:
+            word = word.translate(None, string.punctuation)
+            if 'NOT' in word:
+                sliced = word[3:]
+                if self.sentiment.has_key(sliced):
+                    score += (-1 if self.sentiment[word[3:]] == 'pos' else 1)
+            elif self.sentiment.has_key(word):
                 score += (1 if self.sentiment[word] == 'pos' else -1)
+
         #QUESTION:
         #Handle cases where sentiment is 0, user is neutral?
         #Difference between neutral user and not rating?
         #TELL ME MORE IF SCORE IS 0
-        return (score > 0)
+        #NEEDS IMPROVEMENT?
+        return score
 
     #############################################################################
     # 3. Movie Recommendation helper functions                                  #
@@ -199,8 +257,27 @@ class Chatbot:
         return movie, alternate
 
     def generateRecommendationString(self, choice):
-        #TODO: Make this more robust, randomly generate possibilities, etc.
-        return '\nI think I have enough information. You might like ' + choice
+        #TODO: Check if choice has an article in it, reformat accordingly.
+        split = choice.split(' ')
+        if split[-2] in self.articles:
+            article = split[-2]
+            if len(split) >= 3: split[-3] = split[-3].replace(',', '')
+            split.pop(-2)
+            choice = article + ' ' + ' '.join(split)
+
+        options = self.responses['READY_TO_REC']
+        selected = options[randint(0, len(options) - 1)]
+        res = selected + ' '
+
+        res += 'You might like \"' + choice + '\". '
+        res += self.outputRecQuestion()
+
+        return res
+
+    def outputRecQuestion(self):
+        options = self.responses['REC_QUESTION']
+        selected = options[randint(0, len(options) - 1)]
+        return selected
 
     def readInFile(self, filename, simple):
         content = []
@@ -232,10 +309,14 @@ class Chatbot:
       # movie i by user j
       self.titles, self.ratings = ratings()
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
-      temp = dict(reader)
+      self.sentiment = dict(reader)
+
+      #QUESTION: SHOULD WE STEM?
+      """
       for key in temp.keys():
         new_key = self.stemmer.stem(key)
         self.sentiment[new_key] = temp[key]
+      """
 
     def processTitles(self, titles_list):
         res = {}
@@ -277,6 +358,7 @@ class Chatbot:
       movie_to_recommend = ''
       for i in range(len(self.ratings)):
           if i in self.response_indexes.keys(): continue
+          if self.titles[i][0] in self.recommendations: continue
 
           v = self.ratings[i]
           score = 0.0
@@ -309,10 +391,7 @@ class Chatbot:
     #############################################################################
     def intro(self):
       return """
-      Your task is to implement the chatbot as detailed in the PA6 instructions.
-      Remember: in the starter mode, movie names will come in quotation marks and
-      expressions of sentiment will be simple!
-      Write here the description for your own chatbot!
+      Steve: a simple chatbot for movie recommendations.
       """
 
 
