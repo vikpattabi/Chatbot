@@ -108,7 +108,6 @@ class Chatbot:
     def processSimple(self, inputStr):
         #If we just gave a rec, maybe the user wants to hear more
         #instead of just inputting new movies immediately
-        print inputStr
         if self.justGaveRec:
             affirmation = self.classifyAffirmation(inputStr)
             if affirmation > 0:
