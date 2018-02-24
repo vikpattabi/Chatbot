@@ -1,0 +1,25 @@
+cancel
+decline
+denied
+deny
+disagreed
+fail
+false
+forget it
+impossible
+lolno
+na
+nada
+nah
+naw
+nay
+negative
+negatory
+never
+nix
+no
+nope
+not
+pass
+reject
+zero
