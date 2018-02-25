@@ -37,6 +37,11 @@ class Chatbot:
       self.punctuation = '.,?!-;'
       self.no_words = self.readInFile('deps/no_words.txt', True)
       self.yes_words = self.readInFile('deps/yes_words.txt', True)
+      self.nonQuotePatterns = [
+      '\"(.*?)\"',
+      '(?:I (?:think|thought) | watching )?(.*?) (?:was|is|start(?:ed|s)|end(?:ed|s)) .*?','I .*? watching (.*)',
+       #need to figure hout how to deal with the movie being the last thing in the sententence -> use list of indicator emotion words
+       ]
       #Binarize ratings matrix
       self.binarize()
       self.justGaveRec = False
@@ -119,17 +124,19 @@ class Chatbot:
                 return self.outputCuriosity()
 
         #Assuming we haven't just given a rec, and we're reading in movies.
-        count = inputStr.count('\"')
-        if count == 0:
-            no_movie = self.responses['NO_MOVIES']
-            return no_movie[randint(0, len(no_movie) - 1)]
-        if count != 2:
-            no_quotes_list = self.responses['WRONG_QUOTES']
-            return no_quotes_list[randint(0, len(no_quotes_list) - 1)]
 
         #Now we know there is a properly formatted, single movie in the input, although it may not be one
         #we have in our list.
-        movie, alternate = self.extractMovieNames(inputStr)
+        movie, alternate = self.extractMovieNamesCreative(inputStr)
+        if movie == None:
+            count = inputStr.count('\"')
+            if count == 0:
+                no_movie = self.responses['NO_MOVIES']
+                return no_movie[randint(0, len(no_movie) - 1)]
+            if count != 2:
+                no_quotes_list = self.responses['WRONG_QUOTES']
+                return no_quotes_list[randint(0, len(no_quotes_list) - 1)]
+
 
         #Declare res string
         result = ''
@@ -242,6 +249,43 @@ class Chatbot:
         pattern = '\"(.*?)\"'
         matched_pattern = re.findall(pattern, inputStr)
         movie = matched_pattern[0]
+        splitName = movie.split(' ')
+        alternate = ''
+        if splitName[0] in self.articles:
+            article = splitName[0]
+            splitName.pop(0)
+            year = splitName[len(splitName) - 1]
+            splitName.pop()
+            alternate = ' '.join(splitName)
+            alternate += ', ' + article + ' ' + year
+            alternate = alternate.rstrip()
+        return movie, alternate
+
+    def searchForPatterns(self, searchstring, pattern_strings):
+        patterns = []
+        for pattern_string in pattern_strings:
+            patterns.append(re.compile(pattern_string, re.IGNORECASE))
+
+        # Iterate over the lines of the file.
+        line = searchstring
+        matched_groups = {}
+        for i, p in enumerate(patterns):
+            m = p.findall(line)
+            if m != []:
+                matched_groups[i] = m[0]
+
+        # Return the match corresponding to the first regular expression in the list.
+        if len(matched_groups) > 0:
+            return matched_groups[min(matched_groups.keys())]
+        else:
+            return None
+
+    def extractMovieNamesCreative(self, inputStr):
+        movie = self.searchForPatterns(inputStr, self.nonQuotePatterns)
+        print movie
+        print '----------------------------------'
+        if movie == None:
+            return None, None
         splitName = movie.split(' ')
         alternate = ''
         if splitName[0] in self.articles:
