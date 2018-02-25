@@ -45,6 +45,9 @@ class Chatbot:
       self.INFO_THRESHOLD = 5
       #Pre-process titles, ratings to make later work more efficient.
       self.titles_map = self.processTitles(self.titles)
+      ## Remember which movies were mentioned without an explicit sentiment
+      self.mentioned_movies = []
+      self.justFollowedUp = False
 
     #############################################################################
     # 1. WARM UP REPL
@@ -108,6 +111,11 @@ class Chatbot:
     def processSimple(self, inputStr):
         #If we just gave a rec, maybe the user wants to hear more
         #instead of just inputting new movies immediately
+        if self.justFollowedUp and self.isAClarification(inputStr):
+          last_mention = self.mentioned_movies.pop()
+          inputStr = '\"' + last_mention + '\" ' + inputStr
+          self.justFollowedUp = False
+
         if self.justGaveRec:
             affirmation = self.classifyAffirmation(inputStr)
             if affirmation > 0:
@@ -150,7 +158,13 @@ class Chatbot:
         elif score < 0:
             result += 'You did not like ' + movie + '. '
             if index != -1: self.response_indexes[index] = -1
-        else: result += self.respondToNoSentiment(movie) + ' '
+        else: 
+          # If no sentiment was expressed, queue this movie up
+          # and ask for future comments.
+          self.mentioned_movies.append(movie)
+          result += self.respondToNoSentiment(movie) + ' '
+          self.justFollowedUp = True
+          self.removeDuplicates()
 
         #Different output if the movie isn't in our repository of movies.
         if index == -1:
@@ -159,10 +173,37 @@ class Chatbot:
         #If we have enough info now to recommend something.
         if len(self.response_indexes.keys()) >= self.INFO_THRESHOLD:
             return self.outputRecommendation(result)
-        else: #Else, ask for more info.
-            result += self.outputCuriosity()
+        else: #Else, ask for more info about other movies
+            if not self.justFollowedUp: 
+            #Do this only if we haven't followed up regarding a movie mentioned earlier
+              result += self.outputCuriosity() + " "
+              if len(self.mentioned_movies) > 0: 
+                result += self.outputFollowUp()
+                self.justFollowedUp = True
 
         return result
+
+    def isAClarification(self, input):
+      clarification = False
+      input = input.translate(None, string.punctuation)
+      for word in input.split():
+        if word in ["It", 'it', "That movie", 'that movie']: clarification = True
+      return clarification
+
+    def outputFollowUp(self):
+      options = self.responses['FOLLOWUP']
+      selected = options[randint(0, len(options) - 1)]
+      return selected.replace('REPL', '"' + self.mentioned_movies[-1] + '"')
+
+    def removeDuplicates(self): 
+    # Removes duplicates from self.mentioned_movies while preserving the order
+      mentioned_set = set()
+      no_duplicates = []
+      for m in self.mentioned_movies:
+        if m not in mentioned_set:
+          mentioned_set.add(m)
+          no_duplicates.append(m)
+      self.mentioned_movies = no_duplicates
 
     def outputConfusion(self):
         options = self.responses['CONFUSION']
