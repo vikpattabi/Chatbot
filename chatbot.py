@@ -134,6 +134,8 @@ class Chatbot:
         #Declare res string
         result = ''
 
+
+        self.checkForDisambiguation(movie, alternate)
         #Check if we've already seen the movie so we can reprompt
         index = -1
         if self.titles_map.has_key(movie) or self.titles_map.has_key(alternate):
@@ -180,6 +182,9 @@ class Chatbot:
         currString += ' ' + self.generateRecommendationString(recommended)
         self.justGaveRec = True
         return currString
+
+    def checkForDisambiguation(movie, alternate):
+        
 
     def classifyAffirmation(self, inputStr):
         inputStr = inputStr.translate(None, string.punctuation)
