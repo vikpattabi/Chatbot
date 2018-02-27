@@ -37,6 +37,9 @@ class Chatbot:
       self.punctuation = '.,?!-;'
       self.no_words = self.readInFile('deps/no_words.txt', True)
       self.yes_words = self.readInFile('deps/yes_words.txt', True)
+      self.intensifiers = self.readInFile('deps/intensifiers.txt', True)
+      self.strong_negative = self.readInFile('deps/strong_negative.txt', True)
+      self.strong_positive = self.readInFile('deps/strong_positive.txt', True)
       #Binarize ratings matrix
       self.binarize()
       self.justGaveRec = False
