@@ -111,10 +111,12 @@ class Chatbot:
     def processSimple(self, inputStr):
         #If we just gave a rec, maybe the user wants to hear more
         #instead of just inputting new movies immediately
-        if self.justFollowedUp and self.isAClarification(inputStr):
-          last_mention = self.mentioned_movies.pop()
+
+        movie, test = self.isAClarification(inputStr)
+        if self.justFollowedUp and test:
+          last_mention = self.mentioned_movies.pop(self.mentioned_movies.index(movie))
           inputStr = '\"' + last_mention + '\" ' + inputStr
-          self.justFollowedUp = False
+        self.justFollowedUp = False
 
         if self.justGaveRec:
             affirmation = self.classifyAffirmation(inputStr)
@@ -126,18 +128,17 @@ class Chatbot:
                 self.justGaveRec = False
                 return self.outputCuriosity()
 
-        #Assuming we haven't just given a rec, and we're reading in movies.
-        count = inputStr.count('\"')
+        #Now we know there is a properly formatted, single movie in the input, although it may not be one
+        #we have in our list.
+        #Furthermore, we are not testing an affirmation.
+        movie, alternate, count = self.extractMovieNames(inputStr)
+
         if count == 0:
             no_movie = self.responses['NO_MOVIES']
             return no_movie[randint(0, len(no_movie) - 1)]
         if count != 2:
             no_quotes_list = self.responses['WRONG_QUOTES']
             return no_quotes_list[randint(0, len(no_quotes_list) - 1)]
-
-        #Now we know there is a properly formatted, single movie in the input, although it may not be one
-        #we have in our list.
-        movie, alternate = self.extractMovieNames(inputStr)
 
         #Declare res string
         result = ''
@@ -158,7 +159,7 @@ class Chatbot:
         elif score < 0:
             result += 'You did not like ' + movie + '. '
             if index != -1: self.response_indexes[index] = -1
-        else: 
+        else:
           # If no sentiment was expressed, queue this movie up
           # and ask for future comments.
           self.mentioned_movies.append(movie)
@@ -174,28 +175,39 @@ class Chatbot:
         if len(self.response_indexes.keys()) >= self.INFO_THRESHOLD:
             return self.outputRecommendation(result)
         else: #Else, ask for more info about other movies
-            if not self.justFollowedUp: 
-            #Do this only if we haven't followed up regarding a movie mentioned earlier
-              result += self.outputCuriosity() + " "
-              if len(self.mentioned_movies) > 0: 
-                result += self.outputFollowUp()
-                self.justFollowedUp = True
+            if not self.justFollowedUp:
+                result += self.outputCuriosity() + " "
+                if len(self.mentioned_movies) > 0 :
+                  result += self.outputFollowUp()
+                  self.justFollowedUp = True
 
         return result
 
     def isAClarification(self, input):
-      clarification = False
+      if len(self.mentioned_movies) == 0: return '', False
+      movie, alternate, count = self.extractMovieNames(input)
+      if count == 2:
+          for name in self.mentioned_movies:
+              if name == movie or name == alternate:
+                  return movie if name == movie else alternate, True
+          return '', False
+
+      checkNext = False
       input = input.translate(None, string.punctuation)
       for word in input.split():
-        if word in ["It", 'it', "That movie", 'that movie']: clarification = True
-      return clarification
+        if checkNext and word in ['movie', 'Movie']: return self.mentioned_movies[-1], True
+          #You can't split like this?
+        if word in ["It", 'it']: return self.mentioned_movies[-1], True
+        if word in ['that', 'That']:
+            checkNext = True
+      return '', False
 
     def outputFollowUp(self):
       options = self.responses['FOLLOWUP']
       selected = options[randint(0, len(options) - 1)]
       return selected.replace('REPL', '"' + self.mentioned_movies[-1] + '"')
 
-    def removeDuplicates(self): 
+    def removeDuplicates(self):
     # Removes duplicates from self.mentioned_movies while preserving the order
       mentioned_set = set()
       no_duplicates = []
@@ -280,6 +292,10 @@ class Chatbot:
     # 3. Movie Recommendation helper functions                                  #
     #############################################################################
     def extractMovieNames(self, inputStr):
+        #Assuming we haven't just given a rec, and we're reading in movies.
+        count = inputStr.count('\"')
+        if count != 2: return '', '', count
+
         pattern = '\"(.*?)\"'
         matched_pattern = re.findall(pattern, inputStr)
         movie = matched_pattern[0]
@@ -293,7 +309,7 @@ class Chatbot:
             alternate = ' '.join(splitName)
             alternate += ', ' + article + ' ' + year
             alternate = alternate.rstrip()
-        return movie, alternate
+        return movie, alternate, count
 
     def generateRecommendationString(self, choice):
         #TODO: Check if choice has an article in it, reformat accordingly.
