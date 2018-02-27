@@ -10,12 +10,15 @@ Sorry, I don't follow - one movie at a time please.
 I didn't quite catch that. Make sure your thought is well formed.
 I'm not sure if I saw a movie there.
 ***NO_SENTIMENT***
-I'm a little confused at what you're trying to express about REPL.
-I'm not sure how you feel about REPL.
-I didn't quite catch your thoughts on REPL.
-I don't think I understand whether or not you liked REPL.
-Sorry, I'm pretty tired. I missed whether or not you liked REPL.
-I can't tell if you liked REPL or not.
+I'm a little confused at what you're trying to express about REPL. Can you clarify? (You can also tell me about another movie, up to you!)
+I'm not sure how you feel about REPL. Can you explain more? (You can also tell me about another movie. Your choice!)
+I didn't quite catch your thoughts on REPL. Can you clarify? (Alternatively, you can also tell me about another movie.)
+I don't think I understand whether or not you liked REPL. Tell me more about it. (Instead, we can chat about other movies too!)
+Sorry, I'm pretty tired. I missed whether or not you liked REPL. Can you explain more? (Alternatively, feel free to tell me about another movie)
+I can't tell if you liked REPL or not. Can you clarify? (You can also tell me about some other movie.)
+***FOLLOWUP***
+Earlier on you mentioned REPL. You can also tell me more about that movie!
+I remember you also mentioned REPL earlier - feel free to tell me more on that too.
 ***UNSEEN_MOVIE***
 I admit, I haven't seen that one.
 I must have missed that one in theaters.
