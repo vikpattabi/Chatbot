@@ -48,6 +48,7 @@ class Chatbot:
       ## Remember which movies were mentioned without an explicit sentiment
       self.mentioned_movies = []
       self.justFollowedUp = False
+      self.checkingDisamb = False
 
     #############################################################################
     # 1. WARM UP REPL
@@ -109,13 +110,16 @@ class Chatbot:
           return self.processSimple(inputStr)
 
     def processSimple(self, inputStr):
+
+        if self.checkingDisamb: return self.respondToDisamb(inputStr)
+
         #If we just gave a rec, maybe the user wants to hear more
         #instead of just inputting new movies immediately
 
         movie, test = self.isAClarification(inputStr)
         if self.justFollowedUp and test:
           last_mention = self.mentioned_movies.pop(self.mentioned_movies.index(movie))
-          inputStr = '\"' + last_mention + '\" ' + inputStr
+          if movie not in inputStr: inputStr = '\"' + last_mention + '\" ' + inputStr
         self.justFollowedUp = False
 
         if self.justGaveRec:
@@ -143,8 +147,6 @@ class Chatbot:
         #Declare res string
         result = ''
 
-
-        self.checkForDisambiguation(movie, alternate)
         #Check if we've already seen the movie so we can reprompt
         index = -1
         if self.titles_map.has_key(movie) or self.titles_map.has_key(alternate):
@@ -152,11 +154,23 @@ class Chatbot:
             index = self.titles_map[key][1]
             if self.response_indexes.has_key(index):
                 return self.alreadyHeardAboutMovie()
+
+        if index == -1:
+            matches = self.checkForDisambiguation(movie, alternate)
+            self.disambMatches = matches
+            if len(matches) > 0:
+                self.checkingDisamb = True
+
         #Filter input string to remove bias from movie names (if any)
         inputStr = re.sub('".*?"', 'MOVIE', inputStr)
         score = self.classifySentiment(inputStr)
+
+        if self.checkingDisamb:
+            self.storedScore = score
+            return self.specificyDisambiguation(len(self.disambMatches), movie)
+
         if score > 0:
-            result += 'You liked ' + movie + '. '
+            result += 'You liked \"' + movie + '\". '
             if index != -1: self.response_indexes[index] = 1
         elif score < 0:
             result += 'You did not like ' + movie + '. '
@@ -184,6 +198,60 @@ class Chatbot:
                   self.justFollowedUp = True
 
         return result
+
+    def respondToDisamb(self, inputStr):
+        result = ''
+        #Clarify how this will be tested?
+        pattern = '\"(.*?)\"'
+        matched_pattern = re.findall(pattern, inputStr)
+        movie = ''
+        if len(matched_pattern) == 0:
+            for match in self.disambMatches:
+                if inputStr.lower() in match.lower():
+                    movie = match
+                    break
+        else:
+            movie = matched_pattern[0]
+
+        if self.titles_map.has_key(movie):
+            self.checkingDisamb = False
+            index = self.titles_map[movie][1]
+            fixed = self.fixArticle(movie)
+            if self.storedScore > 0:
+                result += 'You liked \"' + fixed + '\". '
+                self.response_indexes[index] = 1
+            elif self.storedScore < 0:
+                result += 'You did not like ' + fixed + '. '
+                self.response_indexes[index] = -1
+            else:
+                self.mentioned_movies.append(fixed)
+                result += self.respondToNoSentiment(fixed) + ' '
+                self.justFollowedUp = True
+                self.removeDuplicates()
+                return result
+        else:
+            return self.outputConfusion()
+
+        result += self.outputCuriosity()
+        return result
+
+    def fixArticle(self, movie):
+        res = ''
+        article = ''
+        for split in movie.split(' '):
+            if split in self.articles:
+                article = split
+                continue
+            res += split.replace(',', '') + ' '
+        if article != '':
+            res = article + ' ' + res
+        return res.rstrip()
+
+    def specificyDisambiguation(self, num, input):
+        options = self.responses['DISAMB']
+        selected = options[randint(0, len(options) - 1)]
+        selected = selected.replace('REP2', '\"' + input + '\"')
+        return selected.replace('REPL', str(num))
 
     def isAClarification(self, input):
       if len(self.mentioned_movies) == 0: return '', False
@@ -236,8 +304,20 @@ class Chatbot:
         self.justGaveRec = True
         return currString
 
-    def checkForDisambiguation(movie, alternate):
-        
+    def checkForDisambiguation(self, movie, alternate):
+        matches = []
+        if alternate != '':
+            for name in self.titles_map.keys():
+                if movie in name or alternate in name:
+                    match = movie if movie in name else alternate
+                    matches.append(name)
+        else:
+            for name in self.titles_map.keys():
+                if movie in name:
+                    matches.append(name)
+
+        return matches
+
 
     def classifyAffirmation(self, inputStr):
         inputStr = inputStr.translate(None, string.punctuation)
@@ -309,11 +389,14 @@ class Chatbot:
         if splitName[0] in self.articles:
             article = splitName[0]
             splitName.pop(0)
-            year = splitName[len(splitName) - 1]
-            splitName.pop()
-            alternate = ' '.join(splitName)
-            alternate += ', ' + article + ' ' + year
-            alternate = alternate.rstrip()
+            if '(' in splitName[len(splitName) - 1]:
+                year = splitName[len(splitName) - 1]
+                splitName.pop()
+                alternate = ' '.join(splitName)
+                alternate += ', ' + article + ' ' + year
+                alternate = alternate.rstrip()
+            else:
+                alternate = ' '.join(splitName) + ', ' + article
         return movie, alternate, count
 
     def generateRecommendationString(self, choice):

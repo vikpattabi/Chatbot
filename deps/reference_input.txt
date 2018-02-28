@@ -1,9 +1,7 @@
-I saw "Titanic (1997)"
-I thought "GoldenEye (1997)" was a wonderful movie!
-It was great!
-It was great!
-I thought "Heat (1995)" was a really nice film.
-It was great!
-I saw "Broken Arrow (1996)"
+I saw "The Thomas Crown Affair"
+1999
+I saw "Harry Potter"
+goblet
+It was good.
 It was great!
 :quit
