@@ -190,9 +190,9 @@ class Chatbot:
 
     def respondToEmotion(self, emotions):
         emotion = ''
-        max_count = float('-inf')
+        max_count = 0
         for word in emotions.keys():
-            if emotions[word] > max_count:
+            if emotions[word] >= max_count:
                 max_count = emotions[word]
                 emotion = word
         key = ''
@@ -210,11 +210,13 @@ class Chatbot:
             key = 'SURPRISE'
         elif emotion == 'sa':
             key = 'SADNESS'
-        else:
+        elif emotion == 'd':
             key = 'DISGUST'
 
+        if key == '':
+            return key, False
         options = self.responses[key]
-        return selected = options[randint(0, len(options) - 1)]
+        return options[randint(0, len(options) - 1)] + ' ' + self.outputCuriosity(), True
 
 
     def respondToDisamb(self, inputStr):
@@ -258,8 +260,8 @@ class Chatbot:
         split = (inputStr.rstrip()).split(' ')
         for word in split:
             word = word.replace(',', '')
-            if self.emotionWords.has_key(word.lower()):
-                vals = self.emotionWords[word.lower()]
+            if self.emotionWords.has_key(self.stemmer.stem(word.lower())):
+                vals = self.emotionWords[self.stemmer.stem(word.lower())]
                 for v in vals:
                     if res.has_key(v):
                         res[v]  = res[v] + 1
