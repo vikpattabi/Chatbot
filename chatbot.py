@@ -37,11 +37,22 @@ class Chatbot:
       self.punctuation = '.,?!-;'
       self.no_words = self.readInFile('deps/no_words.txt', True)
       self.yes_words = self.readInFile('deps/yes_words.txt', True)
-      self.nonQuotePatterns = [
+      self.findpatterns = [
+      #patterns for finding movies without quotes
       '\"(.*?)\"',
-      '(?:I (?:think|thought) | watching )?(.*?) (?:was|is|start(?:ed|s)|end(?:ed|s)) .*?','I .*? watching (.*)',
-       #need to figure hout how to deal with the movie being the last thing in the sententence -> use list of indicator emotion words
+      '(?:I (?:think|thought|feel|felt) | watching )?(.*?) (?:was|is|start(?:ed|s)|end(?:ed|s)) .*?',
+      'I .*? watching (.*)',
+      'I .*? (?:watch|enjoy|hat|(?:dis)?lik|lov)ed (.*)'
+      #patterns for finding emotions
        ]
+       # self.findtype = [
+       # #patterns for finding movies without quotes
+       # 'MOVIE',
+       # 'MOVIE',
+       # 'MOVIE',
+       # 'MOVIE'
+       # #patterns for finding emotions
+       #  ]
       #Binarize ratings matrix
       self.binarize()
       self.justGaveRec = False
@@ -183,6 +194,9 @@ class Chatbot:
 
     def outputRecommendation(self, currString):
         recommended = self.recommend(self.response_indexes)
+        print '---------------------------'
+        print self.response_indexes
+        print '---------------------------'
         self.recommendations.append(recommended)
         currString += ' ' + self.generateRecommendationString(recommended)
         self.justGaveRec = True
@@ -281,9 +295,9 @@ class Chatbot:
             return None
 
     def extractMovieNamesCreative(self, inputStr):
-        movie = self.searchForPatterns(inputStr, self.nonQuotePatterns)
-        print movie
-        print '----------------------------------'
+        movie = self.searchForPatterns(inputStr, self.findpatterns)
+        # print movie
+        # print '----------------------------------'
         if movie == None:
             return None, None
         splitName = movie.split(' ')

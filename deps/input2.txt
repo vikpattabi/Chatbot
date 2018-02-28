@@ -1,0 +1,10 @@
+I liked "Dracula"
+I hated "Nixon"
+I liked "Ace Ventura: When Nature Calls"
+I hated "Money Train"
+I hated "Get Shorty"
+yes
+yes
+yes
+yes
+:quit
