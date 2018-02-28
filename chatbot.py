@@ -55,6 +55,9 @@ class Chatbot:
       ## Remember which movies were mentioned without an explicit sentiment
       self.mentioned_movies = []
       self.justFollowedUp = False
+      self.checkingDisamb = False
+
+      self.emotionWords = self.readInEmotions()
 
     #############################################################################
     # 1. WARM UP REPL
@@ -97,32 +100,23 @@ class Chatbot:
     #############################################################################
     # 2. Modules 2 and 3: extraction and transformation                         #
     #############################################################################
-
     def process(self, inputStr):
-      """Takes the input string from the REPL and call delegated functions
-      that
-        1) extract the relevant information and
-        2) transform the information into a response to the user
-      """
-      #############################################################################
-      # TODO: Implement the extraction and transformation in this method, possibly#
-      # calling other functions. Although modular code is not graded, it is       #
-      # highly recommended                                                        #
-      #############################################################################
-      if self.is_turbo == True:
-        response = 'processed %s in creative mode!!' % inputStr
-        return response
-      else:
-          return self.processSimple(inputStr)
+        if self.is_turbo:
+            return self.processTurbo(inputStr)
+        else:
+            return self.processSimple(inputStr)
 
-    def processSimple(self, inputStr):
+    def processTurbo(self, inputStr):
+
+        if self.checkingDisamb: return self.respondToDisamb(inputStr)
+
         #If we just gave a rec, maybe the user wants to hear more
         #instead of just inputting new movies immediately
 
         movie, test = self.isAClarification(inputStr)
         if self.justFollowedUp and test:
           last_mention = self.mentioned_movies.pop(self.mentioned_movies.index(movie))
-          inputStr = '\"' + last_mention + '\" ' + inputStr
+          if movie not in inputStr: inputStr = '\"' + last_mention + '\" ' + inputStr
         self.justFollowedUp = False
 
         if self.justGaveRec:
@@ -141,6 +135,19 @@ class Chatbot:
         movie, alternate, count = self.extractMovieNames(inputStr)
 
         if count == 0:
+            #Check for emotions from the user
+            emotions = self.checkEmotions(inputStr)
+            response, emotion_felt = self.respondToEmotion(emotions)
+            if emotion_felt: return response
+            sentiment = self.classifySentiment(inputStr)
+            #If no emotion felt on the scale, maybe check for sentiment?
+            if sentiment < 0:
+                options = self.responses['SADNESS']
+                return options[randint(0, len(options) - 1)] + ' ' + self.outputCuriosity()
+            elif sentiment > 0:
+                options = self.responses['JOY']
+                return options[randint(0, len(options) - 1)] + ' ' + self.outputCuriosity()
+            #Otherwise, there's nothing
             no_movie = self.responses['NO_MOVIES']
             return no_movie[randint(0, len(no_movie) - 1)]
         if count != 2:
@@ -150,7 +157,6 @@ class Chatbot:
         #Declare res string
         result = ''
 
-        # self.checkForDisambiguation(movie, alternate)
         #Check if we've already seen the movie so we can reprompt
         index = -1
         if self.titles_map.has_key(movie) or self.titles_map.has_key(alternate):
@@ -158,6 +164,13 @@ class Chatbot:
             index = self.titles_map[key][1]
             if self.response_indexes.has_key(index):
                 return self.alreadyHeardAboutMovie()
+
+        if index == -1:
+            matches = self.checkForDisambiguation(movie, alternate)
+            self.disambMatches = matches
+            if len(matches) > 0:
+                self.checkingDisamb = True
+
         #Filter input string to remove bias from movie names (if any)
         inputStr = re.sub('".*?"', 'MOVIE', inputStr)
         score = self.classifySentiment(inputStr)
@@ -168,7 +181,11 @@ class Chatbot:
           elif score == -1: result += 'You did not like ' + movie + '. '
           elif score < -1 and score > -4: result += 'You really did not like ' + movie + '. '
           elif score <= -4: result += 'You really hated ' + movie + '. I will speak no more of that movie!'
-          if index != -1: self.response_indexes[index] = -1
+          if index != -1:
+              if  score < 0:
+                  self.response_indexes[index] = -1
+              else:
+                  self.response_indexes[index] = 1
         else:
           # If no sentiment was expressed, queue this movie up
           # and ask for future comments.
@@ -192,6 +209,180 @@ class Chatbot:
                   self.justFollowedUp = True
 
         return result
+
+    def processSimple(self, inputStr):
+        #If we just gave a rec, maybe the user wants to hear more
+        #instead of just inputting new movies immediately
+        if self.justGaveRec:
+            affirmation = self.classifyAffirmation(inputStr)
+            if affirmation > 0:
+                return self.outputRecommendation('')
+            elif affirmation == 0:
+                return self.outputConfusion() + ' ' + self.outputRecQuestion()
+            else:
+                self.justGaveRec = False
+                return self.outputCuriosity()
+
+        #Now we know there is a properly formatted, single movie in the input, although it may not be one
+        #we have in our list.
+        #Furthermore, we are not testing an affirmation.
+        movie, alternate, count = self.extractMovieNames(inputStr)
+
+        if count == 0:
+            #Check for emotions from the user
+            #emotions = self.checkEmotions(inputStr)
+            #response, emotion_felt = self.respondToEmotion(emotions)
+            #if emotion_felt: return response
+            no_movie = self.responses['NO_MOVIES']
+            return no_movie[randint(0, len(no_movie) - 1)]
+        if count != 2:
+            no_quotes_list = self.responses['WRONG_QUOTES']
+            return no_quotes_list[randint(0, len(no_quotes_list) - 1)]
+
+        #Declare res string
+        result = ''
+
+        #Check if we've already seen the movie so we can reprompt
+        index = -1
+        if self.titles_map.has_key(movie) or self.titles_map.has_key(alternate):
+            key = movie if movie in self.titles_map.keys() else alternate
+            index = self.titles_map[key][1]
+            if self.response_indexes.has_key(index):
+                return self.alreadyHeardAboutMovie()
+
+        #Filter input string to remove bias from movie names (if any)
+        inputStr = re.sub('".*?"', 'MOVIE', inputStr)
+        score = self.classifySentiment(inputStr)
+
+        if score > 0:
+            result += 'You liked \"' + movie + '\". '
+            if index != -1: self.response_indexes[index] = 1
+        elif score < 0:
+            result += 'You did not like ' + movie + '. '
+            if index != -1: self.response_indexes[index] = -1
+        else:
+          # If no sentiment was expressed, queue this movie up
+          # and ask for future comments.
+          #self.mentioned_movies.append(movie)
+          result += self.respondToNoSentiment(movie) + ' '
+          #self.justFollowedUp = True
+          #self.removeDuplicates()
+
+        #Different output if the movie isn't in our repository of movies.
+        if index == -1:
+            result += self.respondToUnseenMovie() + ' '
+
+        #If we have enough info now to recommend something.
+        if len(self.response_indexes.keys()) >= self.INFO_THRESHOLD:
+            return self.outputRecommendation(result)
+        else: #Else, ask for more info about other movies
+            #if not self.justFollowedUp:
+                result += self.outputCuriosity()
+                #if len(self.mentioned_movies) > 0 :
+                  #result += self.outputFollowUp()
+                  #self.justFollowedUp = True
+
+        return result
+
+    def respondToEmotion(self, emotions):
+        emotion = ''
+        max_count = 0
+        for word in emotions.keys():
+            if emotions[word] > max_count:
+                max_count = emotions[word]
+                emotion = word
+        key = ''
+        if emotion == 'ang':
+            key = 'ANGER'
+        elif emotion == 'ant':
+            key = 'ANTICIPATION'
+        elif emotion == 'j':
+            key = 'JOY'
+        elif emotion == 't':
+            key = 'TRUST'
+        elif emotion == 'f':
+            key = 'FEAR'
+        elif emotion == 'su':
+            key = 'SURPRISE'
+        elif emotion == 'sa':
+            key = 'SADNESS'
+        elif emotion == 'd':
+            key = 'DISGUST'
+
+        if key == '':
+            return key, False
+        options = self.responses[key]
+        return options[randint(0, len(options) - 1)] + ' ' + self.outputCuriosity(), True
+
+
+    def respondToDisamb(self, inputStr):
+        result = ''
+        #Clarify how this will be tested?
+        pattern = '\"(.*?)\"'
+        matched_pattern = re.findall(pattern, inputStr)
+        movie = ''
+        if len(matched_pattern) == 0:
+            for match in self.disambMatches:
+                if inputStr.lower() in match.lower():
+                    movie = match
+                    break
+        else:
+            movie = matched_pattern[0]
+
+        if self.titles_map.has_key(movie):
+            self.checkingDisamb = False
+            index = self.titles_map[movie][1]
+            fixed = self.fixArticle(movie)
+            if self.storedScore > 0:
+                result += 'You liked \"' + fixed + '\". '
+                self.response_indexes[index] = 1
+            elif self.storedScore < 0:
+                result += 'You did not like ' + fixed + '. '
+                self.response_indexes[index] = -1
+            else:
+                self.mentioned_movies.append(fixed)
+                result += self.respondToNoSentiment(fixed) + ' '
+                self.justFollowedUp = True
+                self.removeDuplicates()
+                return result
+        else:
+            return self.outputConfusion()
+
+        result += self.outputCuriosity()
+        return result
+
+    def checkEmotions(self, inputStr):
+        inputStr = inputStr.translate(None, string.punctuation)
+        res = {}
+        split = (inputStr.rstrip()).split(' ')
+        for word in split:
+            word = word.replace(',', '')
+            if self.emotionWords.has_key(self.stemmer.stem(word.lower())):
+                vals = self.emotionWords[self.stemmer.stem(word.lower())]
+                for v in vals:
+                    if res.has_key(v):
+                        res[v]  = res[v] + 1
+                    else:
+                        res[v] = 1
+        return res
+
+    def fixArticle(self, movie):
+        res = ''
+        article = ''
+        for split in movie.split(' '):
+            if split in self.articles:
+                article = split
+                continue
+            res += split.replace(',', '') + ' '
+        if article != '':
+            res = article + ' ' + res
+        return res.rstrip()
+
+    def specificyDisambiguation(self, num, input):
+        options = self.responses['DISAMB']
+        selected = options[randint(0, len(options) - 1)]
+        selected = selected.replace('REP2', '\"' + input + '\"')
+        return selected.replace('REPL', str(num))
 
     def isAClarification(self, input):
       if len(self.mentioned_movies) == 0: return '', False
@@ -244,9 +435,20 @@ class Chatbot:
         self.justGaveRec = True
         return currString
 
-    def checkForDisambiguation(movie, alternate):
-      pass
-        
+    def checkForDisambiguation(self, movie, alternate):
+        matches = []
+        if alternate != '':
+            for name in self.titles_map.keys():
+                if movie in name or alternate in name:
+                    match = movie if movie in name else alternate
+                    matches.append(name)
+        else:
+            for name in self.titles_map.keys():
+                if movie in name:
+                    matches.append(name)
+
+        return matches
+
 
     def classifyAffirmation(self, inputStr):
         inputStr = inputStr.translate(None, string.punctuation)
@@ -259,7 +461,8 @@ class Chatbot:
         return count
 
     def respondToNoSentiment(self, title):
-        options = self.responses['NO_SENTIMENT']
+        key = 'NO_SENTIMENT_SIMPLE' if not self.is_turbo else 'NO_SENTIMENT'
+        options = self.responses[key]
         selected = options[randint(0, len(options) - 1)]
         return selected.replace('REPL', '"' + title + '"')
 
@@ -274,17 +477,19 @@ class Chatbot:
         return selected
 
     def calculateScore(self, word, prev_word, prev_prev_word):
-          score = 0
-          if self.sentiment.has_key(word):
-            if self.sentiment[word] == 'pos': score += 1
-            if self.sentiment[word] == 'neg': score += -1
-          if word in self.strong_positive: score += 2
-          if word in self.strong_negative: score += -2
-          if prev_word != "" and prev_word in self.intensifiers: 
-            score *= 2
-          if prev_prev_word != "" and prev_prev_word in self.intensifiers: 
-            score *= 2
-          return score
+        stemmed = self.stemmer.stem(word)
+        score = 0
+        if self.sentiment.has_key(word) or self.sentiment.has_key(stemmed):
+            w = word if self.sentiment.has_key(word) else stemmed
+            if self.sentiment[w] == 'pos': score += 1
+            if self.sentiment[w] == 'neg': score += -1
+        if word in self.strong_positive or stemmed in self.strong_positive score += 1
+        if word in self.strong_negative or stemmed in self.strong_negative: score += -1
+        if prev_word != "" and prev_word in self.intensifiers:
+        score *= 2
+        if prev_prev_word != "" and prev_prev_word in self.intensifiers:
+        score *= 2
+        return score
 
     def classifySentiment(self, inputStr):
         score = 0
@@ -293,7 +498,7 @@ class Chatbot:
         negating_idx = -1
         for i in range(len(split)):
             word = split[i]
-            word = self.stemmer.stem(word)
+            #word = self.stemmer.stem(word)
             if negating: word = 'NOT' + word
             split[i] = word
             if self.punctuation in word: negating = False
@@ -310,15 +515,9 @@ class Chatbot:
             if 'NOT' in word:
                 word = word[3:]
                 coefficient = -1
-            stemmed = self.stemmer.stem(word)
             score += coefficient * self.calculateScore(word, prev_word, prev_prev_word)
             prev_prev_word = prev_word
-
             prev_word = word
-
-        #QUESTION:
-        #TELL ME MORE IF SCORE IS 0
-        #NEEDS IMPROVEMENT?
         return score
 
     #############################################################################
@@ -337,11 +536,14 @@ class Chatbot:
         if splitName[0] in self.articles:
             article = splitName[0]
             splitName.pop(0)
-            year = splitName[len(splitName) - 1]
-            splitName.pop()
-            alternate = ' '.join(splitName)
-            alternate += ', ' + article + ' ' + year
-            alternate = alternate.rstrip()
+            if '(' in splitName[len(splitName) - 1]:
+                year = splitName[len(splitName) - 1]
+                splitName.pop()
+                alternate = ' '.join(splitName)
+                alternate += ', ' + article + ' ' + year
+                alternate = alternate.rstrip()
+            else:
+                alternate = ' '.join(splitName) + ', ' + article
         return movie, alternate, count
 
     def generateRecommendationString(self, choice):
@@ -366,6 +568,20 @@ class Chatbot:
         options = self.responses['REC_QUESTION']
         selected = options[randint(0, len(options) - 1)]
         return selected
+
+    def readInEmotions(self):
+        content = []
+        with open('deps/smaller.txt') as f:
+            content = f.readlines()
+        res = {}
+        for line in content:
+            line = line.rstrip()
+            split = line.split(' ')
+            word = split[0]
+            split.pop(0)
+            res[word] = split
+        return res
+
 
     def readInFile(self, filename, simple):
         content = []

@@ -1,3 +1,16 @@
+<<<<<<< HEAD
+=======
+Im feeling angry
+:quit
+
+
+I saw "GoldenEye (1995)"
+I saw "The Thomas Crown Affair (1999)"
+I liked it
+I liked it.
+:quit
+
+>>>>>>> master
 sure
 "Hackers (1995)" started out mediocre but by the end it was totally great and I loved it.
 I thought "Nixon (1995)" was not good.

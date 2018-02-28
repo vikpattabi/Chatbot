@@ -9,6 +9,13 @@ I'm not sure I understand - make sure you're only telling me about one movie at 
 Sorry, I don't follow - one movie at a time please.
 I didn't quite catch that. Make sure your thought is well formed.
 I'm not sure if I saw a movie there.
+***NO_SENTIMENT_SIMPLE***
+I'm a little confused at what you're trying to express about REPL.
+I'm not sure how you feel about REPL.
+I didn't quite catch your thoughts on REPL.
+I don't think I understand whether or not you liked REPL.
+Sorry, I'm pretty tired. I missed whether or not you liked REPL.
+I can't tell if you liked REPL or not.
 ***NO_SENTIMENT***
 I'm a little confused at what you're trying to express about REPL. Can you clarify? (You can also tell me about another movie, up to you!)
 I'm not sure how you feel about REPL. Can you explain more? (You can also tell me about another movie. Your choice!)
@@ -58,5 +65,35 @@ Hope you enjoy the movie! Bye!
 ***GOODBYE_NO_REC***
 Bye! Talk to you soon.
 Have a good one!
-Aw, that's it. Ok, bye!
+Aw, that's it? Ok, bye!
 Cool, talk to you later.
+***DISAMB***
+I see REPL movies with the name REP2. Which one were you referring to?
+There are REPL movies like REP2 - can you be more specific?
+Please clarify which of the REPL REP2 movies you were referring to?
+***ANGER***
+I sense some anger. Master Yoda told me that leads to the dark side.
+I'm feeling like your a little angry. Sorry about that.
+Whoa, don't get angry - we're all friends here.
+***ANTICIPATION***
+I'm sensing some anticipation! Glad you're excited.
+***JOY***
+Glad to see your happy :)
+I love when my friends are happy!
+***TRUST***
+Calm and collected - I like that.
+***FEAR***
+I'm sorry your worried :(
+Don't be scared - I'm here!
+I wish I could help you with that fear, but unfortunately I lack a physical form.
+***SURPRISE***
+That is shocking!
+Man, I'm surprised too!
+That's really surprising!
+***SADNESS***
+Now I'm sad too. 
+Aw, I'm sorry you're feeling sad.
+***DISGUST***
+Oh, gross!
+That's absolutely disgusting.
+Wow, that's repugnant.
