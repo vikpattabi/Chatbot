@@ -37,6 +37,13 @@ class Chatbot:
       self.punctuation = '.,?!-;'
       self.no_words = self.readInFile('deps/no_words.txt', True)
       self.yes_words = self.readInFile('deps/yes_words.txt', True)
+      #Read in fine-sentiment data
+      self.intensifiers = self.readInFile('deps/intensifiers.txt', True)
+      self.intensifiers = [self.stemmer.stem(word) for word in self.intensifiers]
+      self.strong_negative = self.readInFile('deps/strong_negative.txt', True)
+      self.strong_negative = [self.stemmer.stem(word) for word in self.strong_negative]
+      self.strong_positive = self.readInFile('deps/strong_positive.txt', True)
+      self.strong_positive = [self.stemmer.stem(word) for word in self.strong_positive]
       #Binarize ratings matrix
       self.binarize()
       self.justGaveRec = False
@@ -167,17 +174,18 @@ class Chatbot:
         #Filter input string to remove bias from movie names (if any)
         inputStr = re.sub('".*?"', 'MOVIE', inputStr)
         score = self.classifySentiment(inputStr)
-
-        if self.checkingDisamb:
-            self.storedScore = score
-            return self.specificyDisambiguation(len(self.disambMatches), movie)
-
-        if score > 0:
-            result += 'You liked \"' + movie + '\". '
-            if index != -1: self.response_indexes[index] = 1
-        elif score < 0:
-            result += 'You did not like ' + movie + '. '
-            if index != -1: self.response_indexes[index] = -1
+        if score != 0:
+          if score == 1: result += 'You liked ' + movie + '. '
+          elif score > 1 and score < 4: result += 'You really liked ' + movie + '. '
+          elif score >= 4: result += 'You really loved ' + movie + '. Awesome! '
+          elif score == -1: result += 'You did not like ' + movie + '. '
+          elif score < -1 and score > -4: result += 'You really did not like ' + movie + '. '
+          elif score <= -4: result += 'You really hated ' + movie + '. I will speak no more of that movie!'
+          if index != -1:
+              if  score < 0:
+                  self.response_indexes[index] = -1
+              else:
+                  self.response_indexes[index] = 1
         else:
           # If no sentiment was expressed, queue this movie up
           # and ask for future comments.
@@ -468,34 +476,48 @@ class Chatbot:
         selected = options[randint(0, len(options) - 1)]
         return selected
 
+    def calculateScore(self, word, prev_word, prev_prev_word):
+        stemmed = self.stemmer.stem(word)
+        score = 0
+        if self.sentiment.has_key(word) or self.sentiment.has_key(stemmed):
+            w = word if self.sentiment.has_key(word) else stemmed
+            if self.sentiment[w] == 'pos': score += 1
+            if self.sentiment[w] == 'neg': score += -1
+        if word in self.strong_positive or stemmed in self.strong_positive score += 1
+        if word in self.strong_negative or stemmed in self.strong_negative: score += -1
+        if prev_word != "" and prev_word in self.intensifiers:
+        score *= 2
+        if prev_prev_word != "" and prev_prev_word in self.intensifiers:
+        score *= 2
+        return score
+
     def classifySentiment(self, inputStr):
-        #Right now, very rudimentary - use NB?
-        #Seems a bit janky??
         score = 0
         split = inputStr.split(' ')
         negating = False
+        negating_idx = -1
         for i in range(len(split)):
             word = split[i]
-            word = self.stemmer.stem(word)
+            #word = self.stemmer.stem(word)
             if negating: word = 'NOT' + word
             split[i] = word
             if self.punctuation in word: negating = False
             if word in self.negations:
                 negating = True
+                negating_idx = i
+        split.pop(negating_idx)
 
+        prev_prev_word = ""
+        prev_word = ""
         for word in split:
             word = word.translate(None, string.punctuation)
+            coefficient = 1
             if 'NOT' in word:
-                sliced = word[3:]
-                if self.sentiment.has_key(self.stemmer.stem(sliced)) or self.sentiment.has_key(sliced):
-                    #FIX THIS BUG
-                    score += (-1 if self.sentiment[word[3:]] == 'pos' else 1)
-            elif self.sentiment.has_key(self.stemmer.stem(word)) or self.sentiment.has_key(word):
-                score += (1 if self.sentiment[word] == 'pos' else -1)
-
-        #QUESTION:
-        #TELL ME MORE IF SCORE IS 0
-        #NEEDS IMPROVEMENT?
+                word = word[3:]
+                coefficient = -1
+            score += coefficient * self.calculateScore(word, prev_word, prev_prev_word)
+            prev_prev_word = prev_word
+            prev_word = word
         return score
 
     #############################################################################
