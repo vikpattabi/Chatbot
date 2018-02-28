@@ -50,6 +50,8 @@ class Chatbot:
       self.justFollowedUp = False
       self.checkingDisamb = False
 
+      self.emotionWords = self.readInEmotions()
+
     #############################################################################
     # 1. WARM UP REPL
     #############################################################################
@@ -93,23 +95,6 @@ class Chatbot:
     #############################################################################
 
     def process(self, inputStr):
-      """Takes the input string from the REPL and call delegated functions
-      that
-        1) extract the relevant information and
-        2) transform the information into a response to the user
-      """
-      #############################################################################
-      # TODO: Implement the extraction and transformation in this method, possibly#
-      # calling other functions. Although modular code is not graded, it is       #
-      # highly recommended                                                        #
-      #############################################################################
-      if self.is_turbo == True:
-        response = 'processed %s in creative mode!!' % inputStr
-        return response
-      else:
-          return self.processSimple(inputStr)
-
-    def processSimple(self, inputStr):
 
         if self.checkingDisamb: return self.respondToDisamb(inputStr)
 
@@ -138,6 +123,10 @@ class Chatbot:
         movie, alternate, count = self.extractMovieNames(inputStr)
 
         if count == 0:
+            #Check for emotions from the user
+            emotions = self.checkEmotions(inputStr)
+            response, emotion_felt = self.respondToEmotion(emotions)
+            if emotion_felt: return response
             no_movie = self.responses['NO_MOVIES']
             return no_movie[randint(0, len(no_movie) - 1)]
         if count != 2:
@@ -199,6 +188,35 @@ class Chatbot:
 
         return result
 
+    def respondToEmotion(self, emotions):
+        emotion = ''
+        max_count = float('-inf')
+        for word in emotions.keys():
+            if emotions[word] > max_count:
+                max_count = emotions[word]
+                emotion = word
+        key = ''
+        if emotion == 'ang':
+            key = 'ANGER'
+        elif emotion == 'ant':
+            key = 'ANTICIPATION'
+        elif emotion == 'j':
+            key = 'JOY'
+        elif emotion == 't':
+            key = 'TRUST'
+        elif emotion == 'f':
+            key = 'FEAR'
+        elif emotion == 'su':
+            key = 'SURPRISE'
+        elif emotion == 'sa':
+            key = 'SADNESS'
+        else:
+            key = 'DISGUST'
+
+        options = self.responses[key]
+        return selected = options[randint(0, len(options) - 1)]
+
+
     def respondToDisamb(self, inputStr):
         result = ''
         #Clarify how this will be tested?
@@ -234,6 +252,20 @@ class Chatbot:
 
         result += self.outputCuriosity()
         return result
+
+    def checkEmotions(self, inputStr):
+        res = {}
+        split = (inputStr.rstrip()).split(' ')
+        for word in split:
+            word = word.replace(',', '')
+            if self.emotionWords.has_key(word.lower()):
+                vals = self.emotionWords[word.lower()]
+                for v in vals:
+                    if res.has_key(v):
+                        res[v]  = res[v] + 1
+                    else:
+                        res[v] = 1
+        return res
 
     def fixArticle(self, movie):
         res = ''
@@ -364,6 +396,7 @@ class Chatbot:
             if 'NOT' in word:
                 sliced = word[3:]
                 if self.sentiment.has_key(self.stemmer.stem(sliced)) or self.sentiment.has_key(sliced):
+                    #FIX THIS BUG
                     score += (-1 if self.sentiment[word[3:]] == 'pos' else 1)
             elif self.sentiment.has_key(self.stemmer.stem(word)) or self.sentiment.has_key(word):
                 score += (1 if self.sentiment[word] == 'pos' else -1)
@@ -421,6 +454,20 @@ class Chatbot:
         options = self.responses['REC_QUESTION']
         selected = options[randint(0, len(options) - 1)]
         return selected
+
+    def readInEmotions(self):
+        content = []
+        with open('deps/smaller.txt') as f:
+            content = f.readlines()
+        res = {}
+        for line in content:
+            line = line.rstrip()
+            split = line.split(' ')
+            word = split[0]
+            split.pop(0)
+            res[word] = split
+        return res
+
 
     def readInFile(self, filename, simple):
         content = []
