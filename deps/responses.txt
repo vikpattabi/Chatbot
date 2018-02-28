@@ -58,7 +58,7 @@ Hope you enjoy the movie! Bye!
 ***GOODBYE_NO_REC***
 Bye! Talk to you soon.
 Have a good one!
-Aw, that's it. Ok, bye!
+Aw, that's it? Ok, bye!
 Cool, talk to you later.
 ***DISAMB***
 I see REPL movies with the name REP2. Which one were you referring to?
