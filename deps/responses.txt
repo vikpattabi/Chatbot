@@ -9,6 +9,13 @@ I'm not sure I understand - make sure you're only telling me about one movie at 
 Sorry, I don't follow - one movie at a time please.
 I didn't quite catch that. Make sure your thought is well formed.
 I'm not sure if I saw a movie there.
+***NO_SENTIMENT_SIMPLE***
+I'm a little confused at what you're trying to express about REPL.
+I'm not sure how you feel about REPL.
+I didn't quite catch your thoughts on REPL.
+I don't think I understand whether or not you liked REPL.
+Sorry, I'm pretty tired. I missed whether or not you liked REPL.
+I can't tell if you liked REPL or not. 
 ***NO_SENTIMENT***
 I'm a little confused at what you're trying to express about REPL. Can you clarify? (You can also tell me about another movie, up to you!)
 I'm not sure how you feel about REPL. Can you explain more? (You can also tell me about another movie. Your choice!)

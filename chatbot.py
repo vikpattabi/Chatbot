@@ -93,8 +93,13 @@ class Chatbot:
     #############################################################################
     # 2. Modules 2 and 3: extraction and transformation                         #
     #############################################################################
-
     def process(self, inputStr):
+        if self.is_turbo:
+            return self.processTurbo(inputStr)
+        else:
+            return self.processSimple(inputStr)
+
+    def processTurbo(self, inputStr):
 
         if self.checkingDisamb: return self.respondToDisamb(inputStr)
 
@@ -185,6 +190,80 @@ class Chatbot:
                 if len(self.mentioned_movies) > 0 :
                   result += self.outputFollowUp()
                   self.justFollowedUp = True
+
+        return result
+
+    def processSimple(self, inputStr):
+        #If we just gave a rec, maybe the user wants to hear more
+        #instead of just inputting new movies immediately
+        if self.justGaveRec:
+            affirmation = self.classifyAffirmation(inputStr)
+            if affirmation > 0:
+                return self.outputRecommendation('')
+            elif affirmation == 0:
+                return self.outputConfusion() + ' ' + self.outputRecQuestion()
+            else:
+                self.justGaveRec = False
+                return self.outputCuriosity()
+
+        #Now we know there is a properly formatted, single movie in the input, although it may not be one
+        #we have in our list.
+        #Furthermore, we are not testing an affirmation.
+        movie, alternate, count = self.extractMovieNames(inputStr)
+
+        if count == 0:
+            #Check for emotions from the user
+            #emotions = self.checkEmotions(inputStr)
+            #response, emotion_felt = self.respondToEmotion(emotions)
+            #if emotion_felt: return response
+            no_movie = self.responses['NO_MOVIES']
+            return no_movie[randint(0, len(no_movie) - 1)]
+        if count != 2:
+            no_quotes_list = self.responses['WRONG_QUOTES']
+            return no_quotes_list[randint(0, len(no_quotes_list) - 1)]
+
+        #Declare res string
+        result = ''
+
+        #Check if we've already seen the movie so we can reprompt
+        index = -1
+        if self.titles_map.has_key(movie) or self.titles_map.has_key(alternate):
+            key = movie if movie in self.titles_map.keys() else alternate
+            index = self.titles_map[key][1]
+            if self.response_indexes.has_key(index):
+                return self.alreadyHeardAboutMovie()
+
+        #Filter input string to remove bias from movie names (if any)
+        inputStr = re.sub('".*?"', 'MOVIE', inputStr)
+        score = self.classifySentiment(inputStr)
+
+        if score > 0:
+            result += 'You liked \"' + movie + '\". '
+            if index != -1: self.response_indexes[index] = 1
+        elif score < 0:
+            result += 'You did not like ' + movie + '. '
+            if index != -1: self.response_indexes[index] = -1
+        else:
+          # If no sentiment was expressed, queue this movie up
+          # and ask for future comments.
+          #self.mentioned_movies.append(movie)
+          result += self.respondToNoSentiment(movie) + ' '
+          #self.justFollowedUp = True
+          #self.removeDuplicates()
+
+        #Different output if the movie isn't in our repository of movies.
+        if index == -1:
+            result += self.respondToUnseenMovie() + ' '
+
+        #If we have enough info now to recommend something.
+        if len(self.response_indexes.keys()) >= self.INFO_THRESHOLD:
+            return self.outputRecommendation(result)
+        else: #Else, ask for more info about other movies
+            #if not self.justFollowedUp:
+                result += self.outputCuriosity()
+                #if len(self.mentioned_movies) > 0 :
+                  #result += self.outputFollowUp()
+                  #self.justFollowedUp = True
 
         return result
 
@@ -365,7 +444,8 @@ class Chatbot:
         return count
 
     def respondToNoSentiment(self, title):
-        options = self.responses['NO_SENTIMENT']
+        key = 'NO_SENTIMENT_SIMPLE' if not self.is_turbo else 'NO_SENTIMENT'
+        options = self.responses[key]
         selected = options[randint(0, len(options) - 1)]
         return selected.replace('REPL', '"' + title + '"')
 
