@@ -15,7 +15,7 @@ I'm not sure how you feel about REPL.
 I didn't quite catch your thoughts on REPL.
 I don't think I understand whether or not you liked REPL.
 Sorry, I'm pretty tired. I missed whether or not you liked REPL.
-I can't tell if you liked REPL or not. 
+I can't tell if you liked REPL or not.
 ***NO_SENTIMENT***
 I'm a little confused at what you're trying to express about REPL. Can you clarify? (You can also tell me about another movie, up to you!)
 I'm not sure how you feel about REPL. Can you explain more? (You can also tell me about another movie. Your choice!)
@@ -91,7 +91,7 @@ That is shocking!
 Man, I'm surprised too!
 That's really surprising!
 ***SADNESS***
-Now I'm sad too - I'm crying on the inside.
+Now I'm sad too. 
 Aw, I'm sorry you're feeling sad.
 ***DISGUST***
 Oh, gross!

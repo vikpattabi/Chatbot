@@ -132,6 +132,15 @@ class Chatbot:
             emotions = self.checkEmotions(inputStr)
             response, emotion_felt = self.respondToEmotion(emotions)
             if emotion_felt: return response
+            sentiment = self.classifySentiment(inputStr)
+            #If no emotion felt on the scale, maybe check for sentiment?
+            if sentiment < 0:
+                options = self.responses['SADNESS']
+                return options[randint(0, len(options) - 1)] + ' ' + self.outputCuriosity()
+            elif sentiment > 0:
+                options = self.responses['JOY']
+                return options[randint(0, len(options) - 1)] + ' ' + self.outputCuriosity()
+            #Otherwise, there's nothing
             no_movie = self.responses['NO_MOVIES']
             return no_movie[randint(0, len(no_movie) - 1)]
         if count != 2:
