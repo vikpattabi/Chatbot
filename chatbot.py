@@ -39,7 +39,6 @@ class Chatbot:
       self.yes_words = self.readInFile('deps/yes_words.txt', True)
       #Read in fine-sentiment data
       self.intensifiers = self.readInFile('deps/intensifiers.txt', True)
-      self.intensifiers = [self.stemmer.stem(word) for word in self.intensifiers]
       self.strong_negative = self.readInFile('deps/strong_negative.txt', True)
       self.strong_negative = [self.stemmer.stem(word) for word in self.strong_negative]
       self.strong_positive = self.readInFile('deps/strong_positive.txt', True)
@@ -173,6 +172,7 @@ class Chatbot:
 
         #Filter input string to remove bias from movie names (if any)
         inputStr = re.sub('".*?"', 'MOVIE', inputStr)
+        print inputStr
         score = self.classifySentiment(inputStr)
         if score != 0:
           if score == 1: result += 'You liked ' + movie + '. '
@@ -483,19 +483,21 @@ class Chatbot:
             w = word if self.sentiment.has_key(word) else stemmed
             if self.sentiment[w] == 'pos': score += 1
             if self.sentiment[w] == 'neg': score += -1
-        if word in self.strong_positive or stemmed in self.strong_positive score += 1
-        if word in self.strong_negative or stemmed in self.strong_negative: score += -1
+        if not self.is_turbo: return score
+
+        if word in self.strong_positive or stemmed in self.strong_positive: score += 2
+        if word in self.strong_negative or stemmed in self.strong_negative: score += -2
+
         if prev_word != "" and prev_word in self.intensifiers:
-        score *= 2
+            score *= 2
         if prev_prev_word != "" and prev_prev_word in self.intensifiers:
-        score *= 2
+            score *= 2
         return score
 
     def classifySentiment(self, inputStr):
         score = 0
         split = inputStr.split(' ')
         negating = False
-        negating_idx = -1
         for i in range(len(split)):
             word = split[i]
             #word = self.stemmer.stem(word)
@@ -504,8 +506,6 @@ class Chatbot:
             if self.punctuation in word: negating = False
             if word in self.negations:
                 negating = True
-                negating_idx = i
-        split.pop(negating_idx)
 
         prev_prev_word = ""
         prev_word = ""
