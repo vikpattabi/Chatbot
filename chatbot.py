@@ -192,7 +192,7 @@ class Chatbot:
         emotion = ''
         max_count = 0
         for word in emotions.keys():
-            if emotions[word] >= max_count:
+            if emotions[word] > max_count:
                 max_count = emotions[word]
                 emotion = word
         key = ''
@@ -256,6 +256,7 @@ class Chatbot:
         return result
 
     def checkEmotions(self, inputStr):
+        inputStr = inputStr.translate(None, string.punctuation)
         res = {}
         split = (inputStr.rstrip()).split(' ')
         for word in split:
