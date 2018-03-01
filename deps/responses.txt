@@ -24,7 +24,7 @@ I didn't quite catch your thoughts on REPL.
 I don't think I understand whether or not you liked REPL.
 Yo, so I am kinda slow today, didn't really get what you are saying about REPL.
 Sorry, I'm pretty tired. I missed whether or not you liked REPL.
-Wait a sec, so you liked REPL or not?
+Wait a sec, I can't tell if you liked REPL or not.
 I can't tell if you liked REPL or not.
 ***NO_SENTIMENT***
 I'm a little confused at what you're trying to express about REPL. Can you clarify more? (You can also tell me about another movie, up to you!)
@@ -109,7 +109,7 @@ You are my best friend, and I will miss you loads.
 Bye! Talk to you soon.
 Have a good one!
 Ciao!
-Aloha! See you later pal!
+See you later pal!
 Aw, that's it? Ok, bye!
 Oh no, we didn't have enough time to chat yet. Oh well, I hope you stop by some other time!
 Cool, talk to you later.
@@ -145,7 +145,7 @@ That's really surprising!
 Lol, what a surprising turn of events!
 I can't really believe it either!
 ***SADNESS***
-Now I'm sad too. 
+Now I'm sad too.
 Aw I am sad that you are sad. Let's not be sad.
 Aw, I'm sorry you're feeling sad.
 Hey, I am sorry to hear you are sad. I am here for you.

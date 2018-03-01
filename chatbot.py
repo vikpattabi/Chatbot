@@ -42,7 +42,7 @@ class Chatbot:
       '\"(.*?)\"',
       '(?:I (?:think|thought|feel|felt) | watching )?(.*?) (?:was|is|start(?:ed|s)|end(?:ed|s)) .*?',
       'I .*? watching (.*)',
-      'I .*? (?:watch|enjoy|hat|(?:dis)?lik|lov)ed (.*)'
+      'I .*?(?:watch|enjoy|hat|(?:dis)?lik|lov)ed (.*)'
        ]
 
       #Read in fine-sentiment data
@@ -115,6 +115,10 @@ class Chatbot:
             return self.processSimple(inputStr)
 
     def processTurbo(self, inputStr):
+
+        movie = self.extractMovieNamesCreative(inputStr)
+        print movie
+        return ''
 
         if self.checkingDisamb: return self.respondToDisamb(inputStr)
 
@@ -562,6 +566,7 @@ class Chatbot:
 
     def searchForPatterns(self, searchstring, pattern_strings):
         patterns = []
+        print pattern_strings
         for pattern_string in pattern_strings:
             patterns.append(re.compile(pattern_string, re.IGNORECASE))
 
@@ -573,6 +578,7 @@ class Chatbot:
             if m != []:
                 matched_groups[i] = m[0]
 
+        print matched_groups
         # Return the match corresponding to the first regular expression in the list.
         if len(matched_groups) > 0:
             return matched_groups[min(matched_groups.keys())]
@@ -581,6 +587,7 @@ class Chatbot:
 
     def extractMovieNamesCreative(self, inputStr):
         movie = self.searchForPatterns(inputStr, self.findpatterns)
+        print movie
         # print movie
         # print '----------------------------------'
         if movie == None:
@@ -664,14 +671,14 @@ class Chatbot:
       # movie i by user j
       self.titles, self.ratings = ratings()
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
-      self.sentiment = dict(reader)
+      temp = dict(reader)
 
       #QUESTION: SHOULD WE STEM?
-      """
+
       for key in temp.keys():
         new_key = self.stemmer.stem(key)
         self.sentiment[new_key] = temp[key]
-      """
+
 
     def processTitles(self, titles_list):
         res = {}
