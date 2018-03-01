@@ -32,7 +32,7 @@ class Chatbot:
       self.response_indexes = {}
       #Read in data
       self.responses = self.readInFile('deps/responses.txt', False)
-      self.articles = ['The', 'A', 'An']
+      self.articles = ['the', 'a', 'an']
       self.negations = self.readInFile('deps/negations.txt', True)
       self.punctuation = '.,?!-;'
       self.no_words = self.readInFile('deps/no_words.txt', True)
@@ -176,7 +176,6 @@ class Chatbot:
         inputStr = re.sub(movie, 'MOVIE', inputStr)
 
         if index == -1:
-            print 'here'
             matches = self.checkForDisambiguation(movie, alternate)
             self.disambMatches = matches
             if len(matches) > 1:
@@ -184,15 +183,26 @@ class Chatbot:
             elif len(matches) == 1:
                 movie = matches[0]
 
+        #In case we have a disambiguation that needs fixing?
+        if self.titles_map.has_key(movie):
+            index = self.titles_map[movie][1]
+            if self.response_indexes.has_key(index):
+                return self.alreadyHeardAboutMovie()
+
+        movie = self.fixArticle(movie)
         #Filter input string to remove bias from movie names (if any)
         score = self.classifySentiment(inputStr)
+        if self.checkingDisamb:
+            self.storedScore = score
+            return self.specifyDisambiguation(len(matches), movie)
+
         if score != 0:
-          if score == 1: result += 'You liked ' + movie + '. '
-          elif score > 1 and score < 4: result += 'You really liked ' + movie + '. '
-          elif score >= 4: result += 'You really loved ' + movie + '. Awesome! '
-          elif score == -1: result += 'You did not like ' + movie + '. '
-          elif score < -1 and score > -4: result += 'You really did not like ' + movie + '. '
-          elif score <= -4: result += 'You really hated ' + movie + '. I will speak no more of that movie!'
+          if score == 1: result += 'You liked \"' + movie + '\". '
+          elif score > 1 and score < 4: result += 'You really liked \"' + movie + '\". '
+          elif score >= 4: result += 'You really loved \"' + movie + '\". Awesome! '
+          elif score == -1: result += 'You did not like \"' + movie + '\". '
+          elif score < -1 and score > -4: result += 'You really did not like \"' + movie + '\". '
+          elif score <= -4: result += 'You really hated \"' + movie + '\". I will speak no more of that movie!'
           if index != -1:
               if  score < 0:
                   self.response_indexes[index] = -1
@@ -270,7 +280,7 @@ class Chatbot:
             result += 'You liked \"' + movie + '\". '
             if index != -1: self.response_indexes[index] = 1
         elif score < 0:
-            result += 'You did not like ' + movie + '. '
+            result += 'You did not like \"' + movie + '\". '
             if index != -1: self.response_indexes[index] = -1
         else:
           # If no sentiment was expressed, queue this movie up
@@ -335,7 +345,7 @@ class Chatbot:
         movie = ''
         if len(matched_pattern) == 0:
             for match in self.disambMatches:
-                if inputStr.lower() in match.lower():
+                if len(re.findall('\W' + inputStr.lower() + '\W', match.lower())) > 0:
                     movie = match
                     break
         else:
@@ -382,7 +392,7 @@ class Chatbot:
         res = ''
         article = ''
         for split in movie.split(' '):
-            if split in self.articles:
+            if split.lower() in self.articles:
                 article = split
                 continue
             res += split.replace(',', '') + ' '
@@ -390,7 +400,7 @@ class Chatbot:
             res = article + ' ' + res
         return res.rstrip()
 
-    def specificyDisambiguation(self, num, input):
+    def specifyDisambiguation(self, num, input):
         options = self.responses['DISAMB']
         selected = options[randint(0, len(options) - 1)]
         selected = selected.replace('REP2', '\"' + input + '\"')
@@ -451,12 +461,12 @@ class Chatbot:
         matches = []
         if alternate != '':
             for name in self.titles_map.keys():
-                if movie in name or alternate in name:
+                if movie.lower() in name.lower() or alternate.lower() in name.lower():
                     match = movie if movie in name else alternate
                     matches.append(name)
         else:
             for name in self.titles_map.keys():
-                if movie in name:
+                if movie.lower() in name.lower():
                     matches.append(name)
 
         return matches
