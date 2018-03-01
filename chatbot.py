@@ -116,10 +116,6 @@ class Chatbot:
 
     def processTurbo(self, inputStr):
 
-        movie = self.extractMovieNamesCreative(inputStr)
-        print movie
-        return ''
-
         if self.checkingDisamb: return self.respondToDisamb(inputStr)
 
         #If we just gave a rec, maybe the user wants to hear more
@@ -146,9 +142,9 @@ class Chatbot:
         #we have in our list.
         #Furthermore, we are not testing an affirmation.
         #TODO: implement extractMovieNamesCreative HERE
-        movie, alternate, count = self.extractMovieNames(inputStr)
+        movie, alternate = self.extractMovieNamesCreative(inputStr)
 
-        if count == 0:
+        if movie == None:
             #Check for emotions from the user
             emotions = self.checkEmotions(inputStr)
             response, emotion_felt = self.respondToEmotion(emotions)
@@ -164,9 +160,7 @@ class Chatbot:
             #Otherwise, there's nothing
             no_movie = self.responses['NO_MOVIES']
             return no_movie[randint(0, len(no_movie) - 1)]
-        if count != 2:
-            no_quotes_list = self.responses['WRONG_QUOTES']
-            return no_quotes_list[randint(0, len(no_quotes_list) - 1)]
+
 
         #Declare res string
         result = ''
@@ -179,15 +173,18 @@ class Chatbot:
             if self.response_indexes.has_key(index):
                 return self.alreadyHeardAboutMovie()
 
+        inputStr = re.sub(movie, 'MOVIE', inputStr)
+
         if index == -1:
+            print 'here'
             matches = self.checkForDisambiguation(movie, alternate)
             self.disambMatches = matches
-            if len(matches) > 0:
+            if len(matches) > 1:
                 self.checkingDisamb = True
+            elif len(matches) == 1:
+                movie = matches[0]
 
         #Filter input string to remove bias from movie names (if any)
-        inputStr = re.sub('".*?"', 'MOVIE', inputStr)
-        print inputStr
         score = self.classifySentiment(inputStr)
         if score != 0:
           if score == 1: result += 'You liked ' + movie + '. '
@@ -401,7 +398,7 @@ class Chatbot:
 
     def isAClarification(self, input):
       if len(self.mentioned_movies) == 0: return '', False
-      movie, alternate, count = self.extractMovieNames(input)
+      movie, alternate, count = self.extractMovieNamesCreative(input)
       if count == 2:
           for name in self.mentioned_movies:
               if name == movie or name == alternate:
@@ -445,9 +442,6 @@ class Chatbot:
 
     def outputRecommendation(self, currString):
         recommended = self.recommend(self.response_indexes)
-        print '---------------------------'
-        print self.response_indexes
-        print '---------------------------'
         self.recommendations.append(recommended)
         currString += ' ' + self.generateRecommendationString(recommended)
         self.justGaveRec = True
@@ -566,7 +560,6 @@ class Chatbot:
 
     def searchForPatterns(self, searchstring, pattern_strings):
         patterns = []
-        print pattern_strings
         for pattern_string in pattern_strings:
             patterns.append(re.compile(pattern_string, re.IGNORECASE))
 
@@ -578,7 +571,6 @@ class Chatbot:
             if m != []:
                 matched_groups[i] = m[0]
 
-        print matched_groups
         # Return the match corresponding to the first regular expression in the list.
         if len(matched_groups) > 0:
             return matched_groups[min(matched_groups.keys())]
@@ -587,7 +579,6 @@ class Chatbot:
 
     def extractMovieNamesCreative(self, inputStr):
         movie = self.searchForPatterns(inputStr, self.findpatterns)
-        print movie
         # print movie
         # print '----------------------------------'
         if movie == None:
