@@ -121,7 +121,7 @@ Please clarify which of the REPL REP2 movies you were referring to?
 ***ANGER***
 I sense some anger. Master Yoda told me that leads to the dark side.
 I'm feeling like your a little angry. Sorry about that.
-I can feel that you are angry? I am sorry about that, pal.
+I can feel that you're angry? Sorry about that, pal.
 Whoa, don't get angry - we're all friends here.
 ***ANTICIPATION***
 I'm sensing some anticipation! Glad you're excited.

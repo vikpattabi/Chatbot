@@ -40,6 +40,7 @@ class Chatbot:
       self.findpatterns = [
       #patterns for finding movies without quotes
       '\"(.*?)\"',
+      'movie.*?(?:was|is|start(?:ed|s)|end(?:ed|s)) (.*)',
       '(?:I (?:think|thought|feel|felt) | watching )?(.*?) (?:was|is|start(?:ed|s)|end(?:ed|s)) .*?',
       'I .*? watching (.*)',
       'I .*?(?:watch|enjoy|hat|(?:dis)?lik|lov)ed (.*)'
@@ -587,12 +588,28 @@ class Chatbot:
         else:
             return None
 
+    def tryFullSearch(self, inputStr):
+        allMovies = self.titles_map.keys()
+        for movie in allMovies:
+            no_year = re.sub('\(\d\d\d\d\)', '', movie)
+            pattern = ' ' + no_year.lower() + '\W'
+            try:
+                matches = re.findall(' ' + no_year.lower() + '\W', inputStr.lower())
+                if len(matches) > 0:
+                    return self.fixArticle(matches[0]), matches[0]
+            except:
+                continue
+        return None, None
+
     def extractMovieNamesCreative(self, inputStr):
         movie = self.searchForPatterns(inputStr, self.findpatterns)
         # print movie
         # print '----------------------------------'
         if movie == None:
-            return None, None
+            movie, alternate = self.tryFullSearch(inputStr)
+            if movie == None:
+                return None, None
+            else: return movie, alternate
         splitName = movie.split(' ')
         alternate = ''
         if splitName[0] in self.articles:
@@ -755,7 +772,6 @@ class Chatbot:
       return """
       Steve: a simple chatbot for movie recommendations.
       """
-
 
     #############################################################################
     # Auxiliary methods for the chatbot.                                        #
