@@ -99,6 +99,12 @@ class Chatbot:
       options = self.responses[key]
       goodbye_message = options[randint(0, len(options) - 1)]
 
+      if 'REPL' in goodbye_message:
+          movie = self.recommendations[randint(0, len(self.recommendations) - 1)]
+          movie = re.sub('\(\d\d\d\d\)', '', movie)
+          movie = self.fixArticle(movie)
+          goodbye_message = re.sub('REPL', '\"' + movie + '\"', goodbye_message)
+
       #############################################################################
       #                             END OF YOUR CODE                              #
       #############################################################################
@@ -116,7 +122,6 @@ class Chatbot:
             return self.processSimple(inputStr)
 
     def processTurbo(self, inputStr):
-
         if self.checkingDisamb: return self.respondToDisamb(inputStr)
 
         #If we just gave a rec, maybe the user wants to hear more
@@ -357,10 +362,10 @@ class Chatbot:
             index = self.titles_map[movie][1]
             fixed = self.fixArticle(movie)
             if self.storedScore > 0:
-                result += 'You liked \"' + fixed + '\". '
+                result += 'You liked \"' + fixed + '\".'
                 self.response_indexes[index] = 1
             elif self.storedScore < 0:
-                result += 'You did not like ' + fixed + '. '
+                result += 'You did not like ' + fixed + '.'
                 self.response_indexes[index] = -1
             else:
                 self.mentioned_movies.append(fixed)
@@ -371,7 +376,10 @@ class Chatbot:
         else:
             return self.outputConfusion()
 
-        result += self.outputCuriosity()
+        if len(self.response_indexes.keys()) >= self.INFO_THRESHOLD:
+            return result + self.outputRecommendation('')
+
+        result += ' ' + self.outputCuriosity()
         return result
 
     def checkEmotions(self, inputStr):
@@ -771,6 +779,18 @@ class Chatbot:
     def intro(self):
       return """
       Steve: a simple chatbot for movie recommendations.
+
+      In creative mode, the following features are implemented:
+      -Identifying movies without quotes or with imperfect capitalization.
+      -Fine-grained sentiment extraction.
+      -Disambiguating movie titles.
+      -Identifying and responding to emotions.
+      -Understanding references to things said previously.
+      -Responding to (some) arbitrary inputs.
+      -(Hopefully) speaking very fluently.
+
+      Happy grading!
+
       """
 
     #############################################################################

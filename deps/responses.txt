@@ -63,7 +63,7 @@ Cool, tell me about more movies.
 Oki doki, tell me more about movies please!
 Ok, what else have you seen?
 Sweet, you got any other movies you want to talk about?
-Nice, what other movies do we want to talk about?
+What other movies do we want to talk about?
 Dope, what else have you watched?
 Hmm, what other movies should we talk about? Anything in mind?
 Do you have any other movies in mind?
@@ -98,10 +98,10 @@ This one is one of my personal favorites.
 I just machine learnt a bunch and can give you a fantastic recommendation.
 ***GOODBYE_GAVE_REC***
 Hope I was helpful!
-Have fun with that recommendation!
-Let me know whether you like the movie, see you later!
-Hope you enjoy the movie! Bye!
-Keep in touch! I want to hear about what you think of that movie :)
+Have fun with REPL!
+Let me know whether you like REPL. See you later!
+Hope you enjoy REPL! Bye!
+Keep in touch! I want to hear about what you think of REPL :)
 I already miss you, friend. Goodbye!
 See you later, captain!
 You are my best friend, and I will miss you loads.
@@ -146,7 +146,7 @@ Lol, what a surprising turn of events!
 I can't really believe it either!
 ***SADNESS***
 Now I'm sad too.
-Aw I am sad that you are sad. Let's not be sad.
+Aw, I'm sad that you are sad. Let's not be sad.
 Aw, I'm sorry you're feeling sad.
 Hey, I am sorry to hear you are sad. I am here for you.
 ***DISGUST***
