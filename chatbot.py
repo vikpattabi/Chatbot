@@ -37,12 +37,21 @@ class Chatbot:
       self.punctuation = '.,?!-;'
       self.no_words = self.readInFile('deps/no_words.txt', True)
       self.yes_words = self.readInFile('deps/yes_words.txt', True)
+      self.findpatterns = [
+      #patterns for finding movies without quotes
+      '\"(.*?)\"',
+      '(?:I (?:think|thought|feel|felt) | watching )?(.*?) (?:was|is|start(?:ed|s)|end(?:ed|s)) .*?',
+      'I .*? watching (.*)',
+      'I .*? (?:watch|enjoy|hat|(?:dis)?lik|lov)ed (.*)'
+       ]
+
       #Read in fine-sentiment data
       self.intensifiers = self.readInFile('deps/intensifiers.txt', True)
       self.strong_negative = self.readInFile('deps/strong_negative.txt', True)
       self.strong_negative = [self.stemmer.stem(word) for word in self.strong_negative]
       self.strong_positive = self.readInFile('deps/strong_positive.txt', True)
       self.strong_positive = [self.stemmer.stem(word) for word in self.strong_positive]
+
       #Binarize ratings matrix
       self.binarize()
       self.justGaveRec = False
@@ -128,9 +137,11 @@ class Chatbot:
                 self.justGaveRec = False
                 return self.outputCuriosity()
 
+
         #Now we know there is a properly formatted, single movie in the input, although it may not be one
         #we have in our list.
         #Furthermore, we are not testing an affirmation.
+        #TODO: implement extractMovieNamesCreative HERE
         movie, alternate, count = self.extractMovieNames(inputStr)
 
         if count == 0:
@@ -430,6 +441,9 @@ class Chatbot:
 
     def outputRecommendation(self, currString):
         recommended = self.recommend(self.response_indexes)
+        print '---------------------------'
+        print self.response_indexes
+        print '---------------------------'
         self.recommendations.append(recommended)
         currString += ' ' + self.generateRecommendationString(recommended)
         self.justGaveRec = True
@@ -545,6 +559,43 @@ class Chatbot:
             else:
                 alternate = ' '.join(splitName) + ', ' + article
         return movie, alternate, count
+
+    def searchForPatterns(self, searchstring, pattern_strings):
+        patterns = []
+        for pattern_string in pattern_strings:
+            patterns.append(re.compile(pattern_string, re.IGNORECASE))
+
+        # Iterate over the lines of the file.
+        line = searchstring
+        matched_groups = {}
+        for i, p in enumerate(patterns):
+            m = p.findall(line)
+            if m != []:
+                matched_groups[i] = m[0]
+
+        # Return the match corresponding to the first regular expression in the list.
+        if len(matched_groups) > 0:
+            return matched_groups[min(matched_groups.keys())]
+        else:
+            return None
+
+    def extractMovieNamesCreative(self, inputStr):
+        movie = self.searchForPatterns(inputStr, self.findpatterns)
+        # print movie
+        # print '----------------------------------'
+        if movie == None:
+            return None, None
+        splitName = movie.split(' ')
+        alternate = ''
+        if splitName[0] in self.articles:
+            article = splitName[0]
+            splitName.pop(0)
+            year = splitName[len(splitName) - 1]
+            splitName.pop()
+            alternate = ' '.join(splitName)
+            alternate += ', ' + article + ' ' + year
+            alternate = alternate.rstrip()
+        return movie, alternate
 
     def generateRecommendationString(self, choice):
         #TODO: Check if choice has an article in it, reformat accordingly.
