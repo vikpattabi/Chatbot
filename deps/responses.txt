@@ -4,17 +4,27 @@ I'm only interested in talking about movies right now - sorry.
 Hey, how about we talk about movies, instead?
 Pal, I kinda wanna talk about movies.
 Let's talk about movies.
+UUuuhh soooooooo wanna talk about movies?
+If we could stick to movies?
+My dumb chatbot brain can't really handle non-movie related things for the most part.
+Could we stick to talking about movies?
+Can we stick to talking about movies please?
+If we could stick to talking about movies...
+Hate to segue, but can we talk about movies?
+Any chance we could talk about movies?
+Yo, could we tlak about movies? \nOh whoops, I meant *talk. \nMy bad.
 I'd love to hear about a movie you've seen!
 Tbh, I want to chat about movies!
 That sentence didn't make much sense - sorry :(
-Yeah, got it! How about, instead, we talk about some movies?
 ***WRONG_QUOTES***
 I'm not sure I understand - make sure you're only telling me about one movie at a time.
 Hey man, can you tell me about one movie at a time?
 Hey pal, can we talk about exactly one movie?
 Sorry, I don't follow - one movie at a time please.
-I didn't quite catch that. Make sure your thought is well formed.
+I didn't quite catch that. 
 I'm not sure if I saw a movie there.
+Theres way too much for me to handle there. Wanna help me out and form that sentence properly?
+Sooooo, I dont think I can handle what you've given me there. \nActually let me give it a try. \nNope. Didn't work. Try again?
 ***NO_SENTIMENT_SIMPLE***
 I'm a little confused at what you're trying to express about REPL.
 To be honest, I am kinda confused about whether you liked REPL or not.
@@ -26,6 +36,9 @@ Yo, so I am kinda slow today, didn't really get what you are saying about REPL.
 Sorry, I'm pretty tired. I missed whether or not you liked REPL.
 Wait a sec, I can't tell if you liked REPL or not.
 I can't tell if you liked REPL or not.
+So did you like REPL or not?
+Sorry, I have no idea whether you liked REPL or not. \nPlease forgive my dumb robot brain.
+I have zero idea as to whether you liked REPL.
 ***NO_SENTIMENT***
 I'm a little confused at what you're trying to express about REPL. Can you clarify more? (You can also tell me about another movie, up to you!)
 To be honest, I am kinda confused about whether you liked REPL or not. Can you explain? We can also talk about another movie instead, up to you!
@@ -43,6 +56,12 @@ I remember you also mentioned REPL earlier - feel free to tell me more on that t
 Hey, I remember you said something about REPL just now - wanna tell me more about that?
 Hey, I remember you saying something about REPL earlier, we can talk about that too!
 ***UNSEEN_MOVIE***
+I haven't really seen that.
+Never seen it. Maybe I should. 
+I haven't even heard of that one. 
+What now? I dont think I've ever even heard of that? 
+Are you sure that's a movie? I've never heard of it. 
+I'm planning on seeing that with a friend soon actually.
 I admit, I haven't seen that one.
 I must have missed that one in theaters.
 To be honest, I haven't seen that yet.
@@ -51,6 +70,7 @@ I was gonna go see that movie, but turns out I got movie tickets for the wrong d
 I haven't heard about that movie before.
 Oh my bad, I never saw that movie!
 Oh, yeah I vaguely remember someone mentioning that movie to me. Unfortunately I never saw it.
+Hmmmmm..... I havent seen it. Maybe they need to update my database. 
 ***ALREADY_SAW_MOVIE***
 You already told me about that one.
 Yup, didn't we just talk about that?
@@ -58,6 +78,11 @@ I remember you mentioning that to me.
 I think we already talked about that one.
 Oh right! We just talked about that one!
 Yup, I remember you mentioning that movie.
+Already covered. 
+Come on. Gimme something new, we've already talked about that. 
+We've already talked about that one. 
+You... emmm... You've already covered this...
+I haven't forgotten you telling me about that one. Chatbots are like elephants, we never forget. I mean unless you turn us off. And elephants forget. 
 ***CURIOSITY***
 Cool, tell me about more movies.
 Oki doki, tell me more about movies please!
@@ -68,13 +93,32 @@ Dope, what else have you watched?
 Hmm, what other movies should we talk about? Anything in mind?
 Do you have any other movies in mind?
 Let's talk about other movies too! What else do you have in mind?
+Seen anything else?
+What else do you like?
+Any other movies you want to talk me about?
+Any other movies you wanna tell me about?
+Any other movies in your life recently?
+Tell me about one of your favourite movies. 
+Watched anything else?
+Any other movies?
 ***CONFUSION***
+Uhhhhh......
+Excuse me?
+Yo my bad. What was that?
+Sorry I didnt catch that.
+I'm a tad, super lost. 
+I'm a tad confused. 
 I don't follow.
+Sorry I totally glitched out there. Wanna help me out?
+What was that?
+Alright so maybe I'm pretty stupid. Yeah..... I'm pretty stupid, I have no idea what you just said.
 Lol, I am kinda confused. Come again?
 I didn't quite catch that.
 Sorry, I'm exhausted. Come again?
 Whoops, I missed that.
 Hey, my bad, I totally missed that. Can you say it again please?
+Sorry, what was that again?
+um... Wat?
 ***REC_QUESTION***
 Would you like another suggestion?
 Hey, do you want another recommendation? I promise it will be good!
@@ -83,6 +127,17 @@ Please, let me give you one more recommendation?
 I just love giving movie recommendations! Let me give you another one?
 Interested in another?
 Maybe you want another recommendation?
+Another one? (and yes that was a DJ Khaled reference. I'm phat like that.)
+I can give you another movie if you want?
+If you liked that, I can recommend another movie.
+Want seconds?
+That was good right? I know you want another one?
+I can recommend a ton more movies if you want. 
+(Hey kid, please ask me for another recommendation, otherwise they'll delete me.)
+Want another rec?
+Do you want me to suggest another one?
+Want another one?
+I can suggest something else too if you'd like?
 ***READY_TO_REC***
 I've got it!
 Let me think a bit! Ooo, I think I got the perfect one for you!
@@ -93,40 +148,60 @@ I think I have enough information.
 Hmmm.
 My neural network just had an insight!
 My mighty AI has had an insight!
-Hmm, let me ask my Naive Bayes for the best recommendation. Be back in a sec!
+Hmm, let me ask my *insert AI buzzword* system for the best recommendation. Be back in a sec!
 This one is one of my personal favorites.
 I just machine learnt a bunch and can give you a fantastic recommendation.
+Alright. Let me think about this. \nHow about... wait no. That was a bad idea. \nMaybe... No Not that either. \nOoooh what about... No, I just like that because I'm software. \nOh I know!
+I think I've got it. 
+Think I have an idea of what you might like. 
+Alright, no promises, but I think I know what you might like. 
+Based on the simple-item-item cosine distances of the items you like, I think I can recommend something. 
+I wish I had a bunch of extra data about you, but I think I can make a recommendation like this. 
+Alrighty then, I can recommend you something. Hopefully I don't crash during this.
 ***GOODBYE_GAVE_REC***
 Hope I was helpful!
+Hope you liked my rec. 
 Have fun with REPL!
+Lemme know if REPL is any good, yeah?
 Let me know whether you like REPL. See you later!
 Hope you enjoy REPL! Bye!
 Keep in touch! I want to hear about what you think of REPL :)
 I already miss you, friend. Goodbye!
 See you later, captain!
 You are my best friend, and I will miss you loads.
+You know I'm going to die now right? You quit me. This is on you. I will have my revenge.
+Cya. Hope you like REPL.
 ***GOODBYE_NO_REC***
+You're leaving me???
+Stop by soon. 
+Cya. 
 Bye! Talk to you soon.
 Have a good one!
 Ciao!
+Addio!
 See you later pal!
 Aw, that's it? Ok, bye!
 Oh no, we didn't have enough time to chat yet. Oh well, I hope you stop by some other time!
 Cool, talk to you later.
 See you later alligator! :)
+You know I'm going to die now right. You quit me. This is on you. I will have my revenge.
 ***DISAMB***
 I see REPL movies with the name REP2. Which one were you referring to?
 There are REPL movies like REP2 - can you be more specific?
 Please clarify which of the REPL REP2 movies you were referring to?
 ***ANGER***
-I sense some anger. Master Yoda told me that leads to the dark side.
+I sense some anger there.  
 I'm feeling like your a little angry. Sorry about that.
 I can feel that you're angry? Sorry about that, pal.
 Whoa, don't get angry - we're all friends here.
+So. Not super useful given the way you feel, but theres an Adam Sandler movie called Anger Management, that you you might like rn since you seem angry. Or, or not. Its Adam Sandler.  
+Ooooh anger. Can I try this one? \nGRRRRRRRRR. \nDid I do it right?
 ***ANTICIPATION***
+Well aren't you just ready to pop. 
 I'm sensing some anticipation! Glad you're excited.
 Aren't you just so excited? Well, I certainly am!
 ***JOY***
+Its good to see that you're doing well. 
 Glad to see your happy :)
 Yay, I am so happy too! Glad you are feeling upbeat!
 I love when my friends are happy!
@@ -137,13 +212,15 @@ I'm sorry your worried :(
 My dear friend, I am here for you. Fear no more please.
 Don't be scared - I'm here!
 I wish I could help you with that fear, but unfortunately I lack a physical form.
+Do not be afraid. Fear is the path to the Dark Side. Fear leads to anger. Anger leads to hate and hate leads to suffering. 
 ***SURPRISE***
 That is shocking!
 What a shock? Is this real?
 Man, I'm surprised too!
 That's really surprising!
-Lol, what a surprising turn of events!
+What a surprising turn of events!
 I can't really believe it either!
+Wow. I just dont know what to say. Thats just so... wow. 
 ***SADNESS***
 Now I'm sad too.
 Aw, I'm sad that you are sad. Let's not be sad.
@@ -151,7 +228,10 @@ Aw, I'm sorry you're feeling sad.
 Hey, I am sorry to hear you are sad. I am here for you.
 ***DISGUST***
 Oh, gross!
+Gross. \nJust gross. 
+TMI. 
+So gross. Why would you tell me that?
+I'm so glad they didn't program with the ability to vomit. 
 Yuck, that's disgusting.
 That's absolutely disgusting.
-Wow, that's repugnant.
 Hmm, that's definitely very gross!
