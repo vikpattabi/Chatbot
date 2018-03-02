@@ -610,7 +610,7 @@ class Chatbot:
         allMovies = self.titles_map.keys()
         for movie in allMovies:
             no_year = re.sub('\(\d\d\d\d\)', '', movie)
-            no_year = no_year.lower()
+            no_year = ' ' + no_year.lower() + ' '
             if no_year in inputStr:
                 return self.fixArticle(no_year.rstrip()), no_year.rstrip()
         return None, None
