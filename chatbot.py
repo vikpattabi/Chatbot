@@ -66,6 +66,7 @@ class Chatbot:
       self.justFollowedUp = False
       self.checkingDisamb = False
 
+      self.prevEmotion = 0
       self.emotionWords = self.readInEmotions()
 
     #############################################################################
@@ -202,7 +203,9 @@ class Chatbot:
             self.storedScore = score
             return self.specifyDisambiguation(len(matches), movie)
 
-        if score != 0:
+        if score != 0 or self.prevEmotion != 0:
+          if 'but' in inputStr: self.prevEmotion *= -1
+          if score == 0: score = self.prevEmotion
           if score == 1: result += 'You liked \"' + movie + '\". '
           elif score > 1 and score < 4: result += 'You really liked \"' + movie + '\". '
           elif score >= 4: result += 'You really loved \"' + movie + '\". Awesome! '
@@ -235,6 +238,8 @@ class Chatbot:
                 if len(self.mentioned_movies) > 0 :
                   result += self.outputFollowUp()
                   self.justFollowedUp = True
+
+        self.prevEmotion = score
 
         return result
 
