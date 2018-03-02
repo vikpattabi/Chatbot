@@ -418,11 +418,10 @@ class Chatbot:
     def isAClarification(self, input):
       if len(self.mentioned_movies) == 0: return '', False
       movie, alternate = self.extractMovieNamesCreative(input)
-      if count == 2:
-          for name in self.mentioned_movies:
-              if name == movie or name == alternate:
-                  return movie if name == movie else alternate, True
-          return '', False
+      for name in self.mentioned_movies:
+          if name == movie or name == alternate:
+              return movie if name == movie else alternate, True
+      return '', False
 
       checkNext = False
       input = input.translate(None, string.punctuation)
