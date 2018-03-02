@@ -783,7 +783,7 @@ class Chatbot:
       In creative mode, the following features are implemented:
       -Identifying movies without quotes or with imperfect capitalization.
       -Fine-grained sentiment extraction.
-      -Disambiguating movie titles.
+      -Disambiguating movie titles (also works for when you don't include the article or year).
       -Identifying and responding to emotions.
       -Understanding references to things said previously.
       -Responding to (some) arbitrary inputs.
