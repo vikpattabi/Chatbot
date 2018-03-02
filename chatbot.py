@@ -788,6 +788,10 @@ class Chatbot:
       -Understanding references to things said previously.
       -Responding to (some) arbitrary inputs.
       -(Hopefully) speaking very fluently.
+      -Responding to common affirmations / "no-words" when asking if the user wants another recommendation.
+
+      -Note: Creative mode and simple mode are split up and should be tested independently. 
+      -Note: The creative features are integrated together (and can be tested together in case that happens to be worth extra points).
 
       Happy grading!
 
