@@ -204,7 +204,8 @@ class Chatbot:
             return self.specifyDisambiguation(len(matches), movie)
 
         if score != 0 or self.prevEmotion != 0:
-          if 'but' in inputStr: self.prevEmotion *= -1
+          if 'but' in inputStr:
+              self.prevEmotion *= -1
           if score == 0: score = self.prevEmotion
           if score == 1: result += 'You liked \"' + movie + '\". '
           elif score > 1 and score < 4: result += 'You really liked \"' + movie + '\". '
