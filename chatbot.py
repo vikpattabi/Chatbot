@@ -554,6 +554,8 @@ class Chatbot:
             score += coefficient * self.calculateScore(word, prev_word, prev_prev_word)
             prev_prev_word = prev_word
             prev_word = word
+
+        if '!' in inputStr: score *= 2
         return score
 
     #############################################################################
@@ -602,27 +604,27 @@ class Chatbot:
             return None
 
     def tryFullSearch(self, inputStr):
+        inputStr = inputStr.translate(None, string.punctuation)
+        inputStr = ' ' + inputStr + ' '
+        inputStr = inputStr.lower()
         allMovies = self.titles_map.keys()
         for movie in allMovies:
             no_year = re.sub('\(\d\d\d\d\)', '', movie)
-            pattern = ' ' + no_year.lower() + '\W'
-            try:
-                matches = re.findall(' ' + no_year.lower() + '\W', inputStr.lower())
-                if len(matches) > 0:
-                    return self.fixArticle(matches[0]), matches[0]
-            except:
-                continue
+            no_year = no_year.lower()
+            if no_year in inputStr:
+                return self.fixArticle(no_year.rstrip()), no_year.rstrip()
         return None, None
 
     def extractMovieNamesCreative(self, inputStr):
-        movie = self.searchForPatterns(inputStr, self.findpatterns)
+        movie, alternate = self.tryFullSearch(inputStr)
+        if movie == None:
+            movie = self.searchForPatterns(inputStr, self.findpatterns)
+        else: return movie, alternate
         # print movie
         # print '----------------------------------'
         if movie == None:
-            movie, alternate = self.tryFullSearch(inputStr)
-            if movie == None:
-                return None, None
-            else: return movie, alternate
+            return None, None
+
         splitName = movie.split(' ')
         alternate = ''
         if splitName[0] in self.articles:
