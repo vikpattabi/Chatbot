@@ -127,12 +127,11 @@ class Chatbot:
 
         #If we just gave a rec, maybe the user wants to hear more
         #instead of just inputting new movies immediately
-
+        movie = ''
         movie, test = self.isAClarification(inputStr)
         if self.justFollowedUp and test:
           last_mention = self.mentioned_movies.pop(self.mentioned_movies.index(movie))
           if movie not in inputStr: inputStr = '\"' + last_mention + '\" ' + inputStr
-        self.justFollowedUp = False
 
         if self.justGaveRec:
             affirmation = self.classifyAffirmation(inputStr)
@@ -149,7 +148,10 @@ class Chatbot:
         #we have in our list.
         #Furthermore, we are not testing an affirmation.
         #TODO: implement extractMovieNamesCreative HERE
-        movie, alternate = self.extractMovieNamesCreative(inputStr)
+        if not self.justFollowedUp or movie == '':
+            movie, alternate = self.extractMovieNamesCreative(inputStr)
+        self.justFollowedUp = False
+
 
         if movie == None:
             #Check for emotions from the user
@@ -203,8 +205,8 @@ class Chatbot:
             self.storedScore = score
             return self.specifyDisambiguation(len(matches), movie)
 
-        if score != 0 or self.prevEmotion != 0:
-          if 'but' in inputStr:
+        if score != 0 or (self.prevEmotion != 0 and ('also' in inputStr or 'but' in inputStr)):
+          if score == 0 and 'but' in inputStr:
               self.prevEmotion *= -1
           if score == 0: score = self.prevEmotion
           if score == 1: result += 'You liked \"' + movie + '\". '
@@ -391,7 +393,7 @@ class Chatbot:
     def checkEmotions(self, inputStr):
         inputStr = inputStr.translate(None, string.punctuation)
         res = {}
-        split = (inputStr.rstrip()).split(' ')
+        split = (inputStr.strip()).split(' ')
         for word in split:
             word = word.replace(',', '')
             if self.emotionWords.has_key(self.stemmer.stem(word.lower())):
@@ -413,7 +415,7 @@ class Chatbot:
             res += split.replace(',', '') + ' '
         if article != '':
             res = article + ' ' + res
-        return res.rstrip()
+        return res.strip()
 
     def specifyDisambiguation(self, num, input):
         options = self.responses['DISAMB']
@@ -427,7 +429,7 @@ class Chatbot:
       for name in self.mentioned_movies:
           if name == movie or name == alternate:
               return movie if name == movie else alternate, True
-      return '', False
+      return self.mentioned_movies[-1], True
 
       checkNext = False
       input = input.translate(None, string.punctuation)
@@ -579,7 +581,7 @@ class Chatbot:
                 splitName.pop()
                 alternate = ' '.join(splitName)
                 alternate += ', ' + article + ' ' + year
-                alternate = alternate.rstrip()
+                alternate = alternate.strip()
             else:
                 alternate = ' '.join(splitName) + ', ' + article
         return movie, alternate, count
@@ -607,19 +609,26 @@ class Chatbot:
         inputStr = inputStr.translate(None, string.punctuation)
         inputStr = ' ' + inputStr + ' '
         inputStr = inputStr.lower()
+        print inputStr
         allMovies = self.titles_map.keys()
         for movie in allMovies:
             no_year = re.sub('\(\d\d\d\d\)', '', movie)
+            no_year = no_year.strip()
             no_year = ' ' + no_year.lower() + ' '
+            if no_year == ' saw ': no_year = ' Saw '
             if no_year in inputStr:
-                return self.fixArticle(no_year.rstrip()), no_year.rstrip()
+                return self.fixArticle(no_year.strip()), no_year.strip()
         return None, None
+
 
     def extractMovieNamesCreative(self, inputStr):
         movie, alternate = self.tryFullSearch(inputStr)
         if movie == None:
             movie = self.searchForPatterns(inputStr, self.findpatterns)
-        else: return movie, alternate
+        else:
+            movie = movie.strip()
+            alternate = alternate.strip()
+            return movie, alternate
         # print movie
         # print '----------------------------------'
         if movie == None:
@@ -634,7 +643,7 @@ class Chatbot:
             splitName.pop()
             alternate = ' '.join(splitName)
             alternate += ', ' + article + ' ' + year
-            alternate = alternate.rstrip()
+            alternate = alternate.strip()
         return movie, alternate
 
     def generateRecommendationString(self, choice):
@@ -666,7 +675,7 @@ class Chatbot:
             content = f.readlines()
         res = {}
         for line in content:
-            line = line.rstrip()
+            line = line.strip()
             split = line.split(' ')
             word = split[0]
             split.pop(0)
@@ -680,7 +689,7 @@ class Chatbot:
             content = f.readlines()
         if simple:
             for i in range(len(content)):
-                content[i] = content[i].rstrip()
+                content[i] = content[i].strip()
             return content
 
         res = {}
@@ -688,11 +697,11 @@ class Chatbot:
         for sent in content:
             if '***' in sent:
                 new = sent.replace('*', '')
-                new = new.rstrip()
+                new = new.strip()
                 res[new] = []
                 curr_key = new
             else:
-                res[curr_key].append(sent.rstrip())
+                res[curr_key].append(sent.strip())
 
         return res
 
@@ -716,7 +725,7 @@ class Chatbot:
     def processTitles(self, titles_list):
         res = {}
         for i in range(len(titles_list)):
-             title = titles_list[i][0].rstrip()
+             title = titles_list[i][0].strip()
              res[title] = [titles_list[i][1], i]
         return res
 
